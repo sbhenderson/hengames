@@ -1,1 +1,1 @@
-export const gameEnginePackageReady = true;
+export * from "./hand-and-foot";
