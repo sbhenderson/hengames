@@ -1,4 +1,5 @@
 import type { GameDefinition } from "@hengames/shared";
+import { applyHandAndFootAction } from "./actions";
 import { createInitialHandAndFootState, defaultHandAndFootRules } from "./setup";
 import { getHandAndFootPlayerView } from "./views";
 import type { HandAndFootAction, HandAndFootPlayerView, HandAndFootRules, HandAndFootState } from "./types";
@@ -14,9 +15,10 @@ export const handAndFootDefinition: GameDefinition<
   defaultRules: defaultHandAndFootRules,
   createInitialState: createInitialHandAndFootState,
   getPlayerView: getHandAndFootPlayerView,
-  applyAction: ({ state }) => state
+  applyAction: applyHandAndFootAction
 };
 
+export * from "./actions";
 export * from "./types";
 export * from "./cards";
 export * from "./setup";
