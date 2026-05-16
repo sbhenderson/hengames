@@ -1,4 +1,5 @@
 import { GameRuleError, type Card, type CardId } from "@hengames/shared";
+import { isWildRank } from "./cards";
 import { cardPoints, classifyMeld, scoreRound } from "./scoring";
 import type { HandAndFootAction, HandAndFootRules, HandAndFootState } from "./types";
 
@@ -65,6 +66,9 @@ function meldCards(
 
   try {
     if (targetMeldId) {
+      if (cards.length === 0) {
+        throw new Error("Cannot add zero cards to a meld.");
+      }
       const target = state.melds.find((meld) => meld.id === targetMeldId);
       if (!target) {
         throw new Error("Target meld not found.");
@@ -75,6 +79,19 @@ function meldCards(
       if (cards.some((card) => card.rank !== target.rank && card.rank !== "2" && card.rank !== "JOKER")) {
         throw new Error("Cards added to a meld must match the meld rank or be wild.");
       }
+
+      // Validate resulting meld composition before committing
+      const resultingCards = [...target.cards, ...cards];
+      const naturalCount = resultingCards.filter((card) => card.rank === target.rank).length;
+      const wildCount = resultingCards.filter((card) => isWildRank(card.rank)).length;
+
+      if (naturalCount < 2) {
+        throw new Error("A meld requires at least two natural cards.");
+      }
+      if (wildCount > naturalCount) {
+        throw new Error("A meld cannot contain more wild cards than natural cards.");
+      }
+
       target.cards.push(...cards);
       target.isBook = target.cards.length >= rules.cleanBookSize;
       target.isClean = target.isBook && target.cards.every((card) => card.rank === target.rank);
@@ -107,6 +124,22 @@ function meldCards(
   if (player.hand.length === 0 && player.activePile === "hand") {
     player.activePile = "foot";
     state.lastEvent = `${playerId} entered their foot.`;
+  }
+
+  // Check if melding would empty the active foot without meeting going-out requirements
+  if (player.activePile === "foot" && activeCards(player).length === 0) {
+    const teamMelds = state.melds.filter((meld) => meld.teamId === player.teamId);
+    const hasCleanBook = teamMelds.some((meld) => meld.isBook && meld.isClean);
+    const hasDirtyBook = teamMelds.some((meld) => meld.isBook && !meld.isClean);
+
+    if ((rules.goingOutRequiresCleanBook && !hasCleanBook) || (rules.goingOutRequiresDirtyBook && !hasDirtyBook)) {
+      // Restore cards to prevent stuck state
+      activeCards(player).push(...cards);
+      throw new GameRuleError(
+        "invalid-action",
+        "Cannot meld all cards from your foot without the required clean and dirty books."
+      );
+    }
   }
 
   state.turnStep = "must-discard";
