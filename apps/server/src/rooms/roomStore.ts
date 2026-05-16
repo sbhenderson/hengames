@@ -60,6 +60,18 @@ export function createRoomStore() {
     return participantId;
   }
 
+  function authenticateRoomParticipant(code: RoomCode, token: string): { room: RoomRecord; participant: Participant } {
+    const participantId = authenticateToken(token);
+    const room = findRoom(code);
+    
+    const participant = room.participants.get(participantId);
+    if (!participant) {
+      throw new Error("Participant does not belong to this room");
+    }
+    
+    return { room, participant };
+  }
+
   function findRoom(code: RoomCode): RoomRecord {
     const normalizedCode = code.toUpperCase();
     const room = rooms.get(normalizedCode);
@@ -162,8 +174,7 @@ export function createRoomStore() {
     token: string;
     seatId: SeatId;
   }): PublicRoomSnapshot {
-    const participantId = authenticateToken(input.token);
-    const room = findRoom(input.code);
+    const { room, participant } = authenticateRoomParticipant(input.code, input.token);
 
     if (room.status !== "waiting") {
       throw new Error("Cannot choose seat: room is not in waiting status");
@@ -174,26 +185,26 @@ export function createRoomStore() {
       throw new Error(`Seat ${input.seatId} does not exist`);
     }
 
-    if (seat.participantId !== null && seat.participantId !== participantId) {
+    if (seat.participantId !== null && seat.participantId !== participant.id) {
       throw new Error(`Seat ${input.seatId} is already occupied`);
     }
 
     // Clear participant from any prior seat
     for (const s of room.seats) {
-      if (s.participantId === participantId) {
+      if (s.participantId === participant.id) {
         s.participantId = null;
         s.ready = false;
       }
     }
 
     // Assign participant to the new seat
-    seat.participantId = participantId;
+    seat.participantId = participant.id;
     seat.ready = false;
 
     // Remove from spectators
-    room.spectatorIds.delete(participantId);
+    room.spectatorIds.delete(participant.id);
 
-    return createSnapshot(room, participantId);
+    return createSnapshot(room, participant.id);
   }
 
   function setReady(input: {
@@ -201,27 +212,29 @@ export function createRoomStore() {
     token: string;
     ready: boolean;
   }): PublicRoomSnapshot {
-    const participantId = authenticateToken(input.token);
-    const room = findRoom(input.code);
+    const { room, participant } = authenticateRoomParticipant(input.code, input.token);
 
-    const seat = room.seats.find(s => s.participantId === participantId);
+    if (room.status !== "waiting") {
+      throw new Error("Cannot set ready: room is not in waiting status");
+    }
+
+    const seat = room.seats.find(s => s.participantId === participant.id);
     if (!seat) {
       throw new Error("Only seated players can set ready status");
     }
 
     seat.ready = input.ready;
 
-    return createSnapshot(room, participantId);
+    return createSnapshot(room, participant.id);
   }
 
   function startGame(input: {
     code: RoomCode;
     token: string;
-  }): RoomRecord {
-    const participantId = authenticateToken(input.token);
-    const room = findRoom(input.code);
+  }): PublicRoomSnapshot {
+    const { room, participant } = authenticateRoomParticipant(input.code, input.token);
 
-    if (participantId !== room.hostParticipantId) {
+    if (participant.id !== room.hostParticipantId) {
       throw new Error("Only the host can start the game");
     }
 
@@ -249,7 +262,7 @@ export function createRoomStore() {
     room.gameState = gameState;
     room.status = "playing";
 
-    return room;
+    return createSnapshot(room, participant.id);
   }
 
   function applyGameAction(input: {
@@ -257,8 +270,7 @@ export function createRoomStore() {
     token: string;
     action: HandAndFootAction;
   }): PublicRoomSnapshot {
-    const participantId = authenticateToken(input.token);
-    const room = findRoom(input.code);
+    const { room, participant } = authenticateRoomParticipant(input.code, input.token);
 
     if (!room.gameState) {
       throw new Error("Game has not started");
@@ -267,22 +279,26 @@ export function createRoomStore() {
     const nextState = handAndFootDefinition.applyAction({
       state: room.gameState,
       action: input.action,
-      playerId: participantId,
+      playerId: participant.id,
       rules: handAndFootDefinition.defaultRules
     });
 
     room.gameState = nextState;
 
-    return createSnapshot(room, participantId);
+    return createSnapshot(room, participant.id);
   }
 
   function getSnapshot(input: {
     code: RoomCode;
     token?: string;
   }): PublicRoomSnapshot {
-    const room = findRoom(input.code);
-    const participantId = input.token ? authenticateToken(input.token) : null;
-    return createSnapshot(room, participantId);
+    if (input.token) {
+      const { room, participant } = authenticateRoomParticipant(input.code, input.token);
+      return createSnapshot(room, participant.id);
+    } else {
+      const room = findRoom(input.code);
+      return createSnapshot(room, null);
+    }
   }
 
   return {

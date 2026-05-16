@@ -138,9 +138,8 @@ describe("roomStore", () => {
     const result = store.startGame({ code: room.code, token: p1.token });
 
     expect(result.status).toBe("playing");
-    expect(result.gameState).toBeTruthy();
-    expect(result.gameState?.phase).toBe("playing");
-    expect(result.gameState?.players).toBeDefined();
+    expect(result.phase).toBe("playing");
+    expect(result.currentView).toBeTruthy();
   });
 
   test("startGame fails if not all seats are occupied", () => {
@@ -186,5 +185,115 @@ describe("roomStore", () => {
     store.setReady({ code: room.code, token: p4.token, ready: true });
 
     expect(() => store.startGame({ code: room.code, token: p2.token })).toThrow();
+  });
+
+  test("startGame does not expose mutable internal room state or participant tokens", () => {
+    const { room, participant: p1 } = store.createRoom({ displayName: "P1" });
+    const { participant: p2 } = store.joinRoom({ code: room.code, displayName: "P2" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    store.chooseSeat({ code: room.code, token: p1.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: p2.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+
+    store.setReady({ code: room.code, token: p1.token, ready: true });
+    store.setReady({ code: room.code, token: p2.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+
+    const result = store.startGame({ code: room.code, token: p1.token });
+
+    // Should not expose gameState directly
+    expect(result).not.toHaveProperty("gameState");
+
+    // Participants in the returned snapshot should not have token
+    if (result.participants) {
+      result.participants.forEach(p => {
+        expect(p).not.toHaveProperty("token");
+      });
+    }
+
+    // Mutate the returned snapshot status/seats
+    result.status = "waiting";
+    if (result.seats && result.seats.length > 0) {
+      result.seats[0]!.participantId = null;
+    }
+
+    // Assert a fresh getSnapshot still shows the real internal status/seats
+    const freshSnapshot = store.getSnapshot({ code: room.code });
+    expect(freshSnapshot.status).toBe("playing");
+    expect(freshSnapshot.seats.find(s => s.id === "north")?.participantId).toBe(p1.id);
+  });
+
+  test("cross-room token cannot choose a seat in another room", () => {
+    const { room: roomA, participant: participantA } = store.createRoom({ displayName: "PlayerA" });
+    const { room: roomB } = store.createRoom({ displayName: "PlayerB" });
+
+    expect(() => 
+      store.chooseSeat({ code: roomB.code, token: participantA.token, seatId: "north" })
+    ).toThrow();
+  });
+
+  test("cross-room token cannot set ready in another room", () => {
+    const { room: roomA, participant: participantA } = store.createRoom({ displayName: "PlayerA" });
+    const { room: roomB, participant: participantB } = store.createRoom({ displayName: "PlayerB" });
+
+    // Participant B takes a seat in room B
+    store.chooseSeat({ code: roomB.code, token: participantB.token, seatId: "north" });
+
+    // Participant A from room A tries to set ready in room B
+    expect(() => 
+      store.setReady({ code: roomB.code, token: participantA.token, ready: true })
+    ).toThrow();
+  });
+
+  test("cross-room token cannot start game in another room", () => {
+    const { room: roomA, participant: participantA } = store.createRoom({ displayName: "PlayerA" });
+    const { room: roomB, participant: participantB } = store.createRoom({ displayName: "PlayerB" });
+    const { participant: p3 } = store.joinRoom({ code: roomB.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: roomB.code, displayName: "P4" });
+    const { participant: p5 } = store.joinRoom({ code: roomB.code, displayName: "P5" });
+
+    // Fill and ready all seats in room B
+    store.chooseSeat({ code: roomB.code, token: participantB.token, seatId: "north" });
+    store.chooseSeat({ code: roomB.code, token: p3.token, seatId: "east" });
+    store.chooseSeat({ code: roomB.code, token: p4.token, seatId: "south" });
+    store.chooseSeat({ code: roomB.code, token: p5.token, seatId: "west" });
+
+    store.setReady({ code: roomB.code, token: participantB.token, ready: true });
+    store.setReady({ code: roomB.code, token: p3.token, ready: true });
+    store.setReady({ code: roomB.code, token: p4.token, ready: true });
+    store.setReady({ code: roomB.code, token: p5.token, ready: true });
+
+    // Participant A from room A tries to start room B (even though participantB is host of room B)
+    expect(() => 
+      store.startGame({ code: roomB.code, token: participantA.token })
+    ).toThrow();
+  });
+
+  test("setReady throws after the game has started", () => {
+    const { room, participant: p1 } = store.createRoom({ displayName: "P1" });
+    const { participant: p2 } = store.joinRoom({ code: room.code, displayName: "P2" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    store.chooseSeat({ code: room.code, token: p1.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: p2.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+
+    store.setReady({ code: room.code, token: p1.token, ready: true });
+    store.setReady({ code: room.code, token: p2.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+
+    store.startGame({ code: room.code, token: p1.token });
+
+    // Try to toggle ready after game has started
+    expect(() => 
+      store.setReady({ code: room.code, token: p1.token, ready: false })
+    ).toThrow();
   });
 });
