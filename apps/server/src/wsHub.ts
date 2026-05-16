@@ -1,0 +1,64 @@
+import { Server } from "node:http";
+import { WebSocketServer, WebSocket } from "ws";
+import { createRoomStore } from "./rooms/roomStore";
+
+type Client = {
+  socket: WebSocket;
+  code: string;
+  participantToken?: string;
+};
+
+export function createWsHub(server: Server) {
+  const clients = new Set<Client>();
+
+  const wss = new WebSocketServer({ server, path: "/ws" });
+
+  wss.on("connection", (socket, req) => {
+    const url = new URL(req.url || "", `http://${req.headers.host}`);
+    const code = url.searchParams.get("code");
+    const participantToken = url.searchParams.get("participantToken") ?? undefined;
+
+    if (!code) {
+      socket.close(1008, "Room code is required.");
+      return;
+    }
+
+    const normalizedCode = code.toUpperCase();
+
+    const client: Client = {
+      socket,
+      code: normalizedCode,
+      participantToken
+    };
+
+    clients.add(client);
+
+    socket.on("close", () => {
+      clients.delete(client);
+    });
+  });
+
+  function broadcastRoom(code: string, roomStore: ReturnType<typeof createRoomStore>) {
+    for (const client of clients) {
+      if (client.code === code && client.socket.readyState === WebSocket.OPEN) {
+        const snapshot = roomStore.getSnapshot({
+          code,
+          token: client.participantToken
+        });
+
+        const message = JSON.stringify({
+          type: "room-snapshot",
+          snapshot
+        });
+
+        client.socket.send(message);
+      }
+    }
+  }
+
+  return {
+    broadcastRoom
+  };
+}
+
+export type WsHub = ReturnType<typeof createWsHub>;
