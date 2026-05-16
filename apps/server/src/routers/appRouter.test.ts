@@ -86,12 +86,30 @@ describe("appRouter", () => {
   });
 
   describe("chooseSeat - token mapping and broadcast", () => {
-    test("maps participantToken from context to token for roomStore", async () => {
+    test("accepts participantToken as input parameter", async () => {
       const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
       
       const snapshot = await router
-        .createCaller({ participantToken: created.participant.token })
-        .chooseSeat({ code: created.room.code, seatId: "north" });
+        .createCaller({})
+        .chooseSeat({ 
+          code: created.room.code, 
+          seatId: "north",
+          participantToken: created.participant.token
+        });
+
+      expect(snapshot.seats.find(s => s.id === "north")!.participantId).toBe(created.participant.id);
+    });
+
+    test("maps participantToken from input to token for roomStore", async () => {
+      const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
+      
+      const snapshot = await router
+        .createCaller({})
+        .chooseSeat({ 
+          code: created.room.code, 
+          seatId: "north",
+          participantToken: created.participant.token
+        });
 
       expect(snapshot.seats.find(s => s.id === "north")!.participantId).toBe(created.participant.id);
     });
@@ -100,23 +118,35 @@ describe("appRouter", () => {
       const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
 
       await router
-        .createCaller({ participantToken: created.participant.token })
-        .chooseSeat({ code: created.room.code, seatId: "north" });
+        .createCaller({})
+        .chooseSeat({ 
+          code: created.room.code, 
+          seatId: "north",
+          participantToken: created.participant.token
+        });
 
       expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(created.room.code, roomStore);
     });
   });
 
   describe("setReady - token mapping and broadcast", () => {
-    test("maps participantToken from context to token for roomStore", async () => {
+    test("accepts participantToken as input parameter", async () => {
       const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
       await router
-        .createCaller({ participantToken: created.participant.token })
-        .chooseSeat({ code: created.room.code, seatId: "north" });
+        .createCaller({})
+        .chooseSeat({ 
+          code: created.room.code, 
+          seatId: "north",
+          participantToken: created.participant.token
+        });
 
       const snapshot = await router
-        .createCaller({ participantToken: created.participant.token })
-        .setReady({ code: created.room.code, ready: true });
+        .createCaller({})
+        .setReady({ 
+          code: created.room.code, 
+          ready: true,
+          participantToken: created.participant.token
+        });
 
       expect(snapshot.seats.find(s => s.id === "north")!.ready).toBe(true);
     });
@@ -124,87 +154,169 @@ describe("appRouter", () => {
     test("broadcasts room after setting ready", async () => {
       const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
       await router
-        .createCaller({ participantToken: created.participant.token })
-        .chooseSeat({ code: created.room.code, seatId: "north" });
+        .createCaller({})
+        .chooseSeat({ 
+          code: created.room.code, 
+          seatId: "north",
+          participantToken: created.participant.token
+        });
 
       mockWsHub.broadcastRoom.mockClear();
 
       await router
-        .createCaller({ participantToken: created.participant.token })
-        .setReady({ code: created.room.code, ready: true });
+        .createCaller({})
+        .setReady({ 
+          code: created.room.code, 
+          ready: true,
+          participantToken: created.participant.token
+        });
 
       expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(created.room.code, roomStore);
     });
   });
 
   describe("startGame - token mapping and broadcast", () => {
-    test("broadcasts room after starting game", async () => {
+    test("accepts participantToken as input and broadcasts", async () => {
       // Setup: create room, join 3 more players, all choose seats and ready up
       const host = await router.createCaller({}).createRoom({ displayName: "Alice" });
       const p2 = await router.createCaller({}).joinRoom({ code: host.room.code, displayName: "Bob" });
       const p3 = await router.createCaller({}).joinRoom({ code: host.room.code, displayName: "Carol" });
       const p4 = await router.createCaller({}).joinRoom({ code: host.room.code, displayName: "Dave" });
 
-      await router.createCaller({ participantToken: host.participant.token })
-        .chooseSeat({ code: host.room.code, seatId: "north" });
-      await router.createCaller({ participantToken: p2.participant.token })
-        .chooseSeat({ code: host.room.code, seatId: "east" });
-      await router.createCaller({ participantToken: p3.participant.token })
-        .chooseSeat({ code: host.room.code, seatId: "south" });
-      await router.createCaller({ participantToken: p4.participant.token })
-        .chooseSeat({ code: host.room.code, seatId: "west" });
+      await router.createCaller({})
+        .chooseSeat({ 
+          code: host.room.code, 
+          seatId: "north",
+          participantToken: host.participant.token
+        });
+      await router.createCaller({})
+        .chooseSeat({ 
+          code: host.room.code, 
+          seatId: "east",
+          participantToken: p2.participant.token
+        });
+      await router.createCaller({})
+        .chooseSeat({ 
+          code: host.room.code, 
+          seatId: "south",
+          participantToken: p3.participant.token
+        });
+      await router.createCaller({})
+        .chooseSeat({ 
+          code: host.room.code, 
+          seatId: "west",
+          participantToken: p4.participant.token
+        });
 
-      await router.createCaller({ participantToken: host.participant.token })
-        .setReady({ code: host.room.code, ready: true });
-      await router.createCaller({ participantToken: p2.participant.token })
-        .setReady({ code: host.room.code, ready: true });
-      await router.createCaller({ participantToken: p3.participant.token })
-        .setReady({ code: host.room.code, ready: true });
-      await router.createCaller({ participantToken: p4.participant.token })
-        .setReady({ code: host.room.code, ready: true });
+      await router.createCaller({})
+        .setReady({ 
+          code: host.room.code, 
+          ready: true,
+          participantToken: host.participant.token
+        });
+      await router.createCaller({})
+        .setReady({ 
+          code: host.room.code, 
+          ready: true,
+          participantToken: p2.participant.token
+        });
+      await router.createCaller({})
+        .setReady({ 
+          code: host.room.code, 
+          ready: true,
+          participantToken: p3.participant.token
+        });
+      await router.createCaller({})
+        .setReady({ 
+          code: host.room.code, 
+          ready: true,
+          participantToken: p4.participant.token
+        });
 
       mockWsHub.broadcastRoom.mockClear();
 
-      await router.createCaller({ participantToken: host.participant.token })
-        .startGame({ code: host.room.code });
+      await router.createCaller({})
+        .startGame({ 
+          code: host.room.code,
+          participantToken: host.participant.token
+        });
 
       expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(host.room.code, roomStore);
     });
   });
 
   describe("gameAction - token mapping and broadcast", () => {
-    test("validates draw action and broadcasts", async () => {
+    test("accepts participantToken as input and validates draw action", async () => {
       const host = await router.createCaller({}).createRoom({ displayName: "Alice" });
       const p2 = await router.createCaller({}).joinRoom({ code: host.room.code, displayName: "Bob" });
       const p3 = await router.createCaller({}).joinRoom({ code: host.room.code, displayName: "Carol" });
       const p4 = await router.createCaller({}).joinRoom({ code: host.room.code, displayName: "Dave" });
 
-      await router.createCaller({ participantToken: host.participant.token })
-        .chooseSeat({ code: host.room.code, seatId: "north" });
-      await router.createCaller({ participantToken: p2.participant.token })
-        .chooseSeat({ code: host.room.code, seatId: "east" });
-      await router.createCaller({ participantToken: p3.participant.token })
-        .chooseSeat({ code: host.room.code, seatId: "south" });
-      await router.createCaller({ participantToken: p4.participant.token })
-        .chooseSeat({ code: host.room.code, seatId: "west" });
+      await router.createCaller({})
+        .chooseSeat({ 
+          code: host.room.code, 
+          seatId: "north",
+          participantToken: host.participant.token
+        });
+      await router.createCaller({})
+        .chooseSeat({ 
+          code: host.room.code, 
+          seatId: "east",
+          participantToken: p2.participant.token
+        });
+      await router.createCaller({})
+        .chooseSeat({ 
+          code: host.room.code, 
+          seatId: "south",
+          participantToken: p3.participant.token
+        });
+      await router.createCaller({})
+        .chooseSeat({ 
+          code: host.room.code, 
+          seatId: "west",
+          participantToken: p4.participant.token
+        });
 
-      await router.createCaller({ participantToken: host.participant.token })
-        .setReady({ code: host.room.code, ready: true });
-      await router.createCaller({ participantToken: p2.participant.token })
-        .setReady({ code: host.room.code, ready: true });
-      await router.createCaller({ participantToken: p3.participant.token })
-        .setReady({ code: host.room.code, ready: true });
-      await router.createCaller({ participantToken: p4.participant.token })
-        .setReady({ code: host.room.code, ready: true });
+      await router.createCaller({})
+        .setReady({ 
+          code: host.room.code, 
+          ready: true,
+          participantToken: host.participant.token
+        });
+      await router.createCaller({})
+        .setReady({ 
+          code: host.room.code, 
+          ready: true,
+          participantToken: p2.participant.token
+        });
+      await router.createCaller({})
+        .setReady({ 
+          code: host.room.code, 
+          ready: true,
+          participantToken: p3.participant.token
+        });
+      await router.createCaller({})
+        .setReady({ 
+          code: host.room.code, 
+          ready: true,
+          participantToken: p4.participant.token
+        });
 
-      await router.createCaller({ participantToken: host.participant.token })
-        .startGame({ code: host.room.code });
+      await router.createCaller({})
+        .startGame({ 
+          code: host.room.code,
+          participantToken: host.participant.token
+        });
 
       mockWsHub.broadcastRoom.mockClear();
 
       const snapshot = await router
-        .createCaller({ participantToken: host.participant.token })
-        .gameAction({ code: host.room.code, action: { type: "draw" } });
+        .createCaller({})
+        .gameAction({ 
+          code: host.room.code, 
+          action: { type: "draw" },
+          participantToken: host.participant.token
+        });
 
       expect(snapshot.status).toBe("playing");
       expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(host.room.code, roomStore);
@@ -217,16 +329,24 @@ describe("appRouter", () => {
 
       // Valid seats should work
       const north = await router
-        .createCaller({ participantToken: created.participant.token })
-        .chooseSeat({ code: created.room.code, seatId: "north" });
+        .createCaller({})
+        .chooseSeat({ 
+          code: created.room.code, 
+          seatId: "north",
+          participantToken: created.participant.token
+        });
       expect(north.seats.find(s => s.id === "north")!.participantId).toBe(created.participant.id);
 
       // Create another player to test other seats
       const p2 = await router.createCaller({}).joinRoom({ code: created.room.code, displayName: "Bob" });
       
       const east = await router
-        .createCaller({ participantToken: p2.participant.token })
-        .chooseSeat({ code: created.room.code, seatId: "east" });
+        .createCaller({})
+        .chooseSeat({ 
+          code: created.room.code, 
+          seatId: "east",
+          participantToken: p2.participant.token
+        });
       expect(east.seats.find(s => s.id === "east")!.participantId).toBe(p2.participant.id);
 
       // Invalid seats should fail (TypeScript validates this at compile time)

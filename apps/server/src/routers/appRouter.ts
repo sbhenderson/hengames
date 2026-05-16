@@ -1,10 +1,7 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
 import { createRoomStore } from "../rooms/roomStore";
-
-export type WsHub = {
-  broadcastRoom: (code: string, roomStore: ReturnType<typeof createRoomStore>) => void;
-};
+import type { WsHub } from "../wsHub";
 
 const seatIdSchema = z.enum(["north", "east", "south", "west"]);
 
@@ -69,13 +66,14 @@ export function createAppRouter(input: {
       .input(
         z.object({
           code: z.string(),
-          seatId: seatIdSchema
+          seatId: seatIdSchema,
+          participantToken: z.string()
         })
       )
-      .mutation(({ input, ctx }) => {
+      .mutation(({ input }) => {
         const snapshot = roomStore.chooseSeat({
           code: input.code,
-          token: ctx.participantToken!,
+          token: input.participantToken,
           seatId: input.seatId
         });
         wsHub.broadcastRoom(input.code, roomStore);
@@ -86,13 +84,14 @@ export function createAppRouter(input: {
       .input(
         z.object({
           code: z.string(),
-          ready: z.boolean()
+          ready: z.boolean(),
+          participantToken: z.string()
         })
       )
-      .mutation(({ input, ctx }) => {
+      .mutation(({ input }) => {
         const snapshot = roomStore.setReady({
           code: input.code,
-          token: ctx.participantToken!,
+          token: input.participantToken,
           ready: input.ready
         });
         wsHub.broadcastRoom(input.code, roomStore);
@@ -102,13 +101,14 @@ export function createAppRouter(input: {
     startGame: publicProcedure
       .input(
         z.object({
-          code: z.string()
+          code: z.string(),
+          participantToken: z.string()
         })
       )
-      .mutation(({ input, ctx }) => {
+      .mutation(({ input }) => {
         const snapshot = roomStore.startGame({
           code: input.code,
-          token: ctx.participantToken!
+          token: input.participantToken
         });
         wsHub.broadcastRoom(input.code, roomStore);
         return snapshot;
@@ -118,13 +118,14 @@ export function createAppRouter(input: {
       .input(
         z.object({
           code: z.string(),
-          action: actionSchema
+          action: actionSchema,
+          participantToken: z.string()
         })
       )
-      .mutation(({ input, ctx }) => {
+      .mutation(({ input }) => {
         const snapshot = roomStore.applyGameAction({
           code: input.code,
-          token: ctx.participantToken!,
+          token: input.participantToken,
           action: input.action
         });
         wsHub.broadcastRoom(input.code, roomStore);
