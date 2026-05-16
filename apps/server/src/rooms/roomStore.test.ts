@@ -395,4 +395,27 @@ describe("roomStore", () => {
       store.applyGameAction({ code: room.code, token: spectator.token, action: { type: "draw" } as any })
     ).toThrow("Only seated players can perform game actions");
   });
+
+  test("startGame throws when attempting to start an already playing room", () => {
+    const { room, participant: p1 } = store.createRoom({ displayName: "P1" });
+    const { participant: p2 } = store.joinRoom({ code: room.code, displayName: "P2" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    store.chooseSeat({ code: room.code, token: p1.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: p2.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+
+    store.setReady({ code: room.code, token: p1.token, ready: true });
+    store.setReady({ code: room.code, token: p2.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+
+    store.startGame({ code: room.code, token: p1.token });
+
+    expect(() => 
+      store.startGame({ code: room.code, token: p1.token })
+    ).toThrow("Cannot start game: room is not in waiting status");
+  });
 });

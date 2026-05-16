@@ -229,6 +229,10 @@ export function createRoomStore() {
     const room = findRoom(input.code);
     const participant = authenticateRoomParticipant(room, input.token);
 
+    if (room.status !== "waiting") {
+      throw new Error("Cannot start game: room is not in waiting status");
+    }
+
     if (participant.id !== room.hostParticipantId) {
       throw new Error("Only the host can start the game");
     }
