@@ -236,4 +236,35 @@ describe("wsHub", () => {
 
     ws2.close();
   });
+
+  test("broadcast continues to valid clients even if one client has invalid token", async () => {
+    const { room, participant } = roomStore.createRoom({ displayName: "Alice" });
+    
+    // Connect client with invalid token
+    const wsInvalid = new WebSocket(
+      `ws://localhost:${port}/ws?code=${room.code}&participantToken=INVALID_TOKEN`
+    );
+    await new Promise<void>((resolve) => wsInvalid.on("open", () => resolve()));
+
+    // Connect valid client with correct token
+    const wsValid = new WebSocket(
+      `ws://localhost:${port}/ws?code=${room.code}&participantToken=${participant.token}`
+    );
+    await new Promise<void>((resolve) => wsValid.on("open", () => resolve()));
+
+    const validMessages: any[] = [];
+    wsValid.on("message", (data) => validMessages.push(JSON.parse(data.toString())));
+
+    // Broadcast should not throw and should still reach valid client
+    expect(() => wsHub.broadcastRoom(room.code, roomStore)).not.toThrow();
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Valid client should still receive the broadcast
+    expect(validMessages).toHaveLength(1);
+    expect(validMessages[0]!.type).toBe("room-snapshot");
+
+    wsInvalid.close();
+    wsValid.close();
+  });
 });

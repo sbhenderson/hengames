@@ -41,17 +41,21 @@ export function createWsHub(server: Server) {
   function broadcastRoom(code: string, roomStore: ReturnType<typeof createRoomStore>) {
     for (const client of clients) {
       if (client.code === code && client.socket.readyState === WebSocket.OPEN) {
-        const snapshot = roomStore.getSnapshot({
-          code,
-          token: client.participantToken
-        });
+        try {
+          const snapshot = roomStore.getSnapshot({
+            code,
+            token: client.participantToken
+          });
 
-        const message = JSON.stringify({
-          type: "room-snapshot",
-          snapshot
-        });
+          const message = JSON.stringify({
+            type: "room-snapshot",
+            snapshot
+          });
 
-        client.socket.send(message);
+          client.socket.send(message);
+        } catch (error) {
+          console.error(`Failed to broadcast to client in room ${code}:`, error instanceof Error ? error.message : error);
+        }
       }
     }
   }
