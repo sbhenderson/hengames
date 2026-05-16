@@ -28,7 +28,6 @@ type RoomRecord = {
 
 export function createRoomStore() {
   const rooms = new Map<RoomCode, RoomRecord>();
-  const participantTokens = new Map<string, ParticipantId>();
 
   function createRoomCode(): RoomCode {
     let code: string;
@@ -43,33 +42,12 @@ export function createRoomStore() {
   function createParticipant(displayName?: string): Participant {
     const id = randomUUID();
     const token = randomUUID();
-    participantTokens.set(token, id);
     return {
       id,
       displayName: displayName || `Anonymous-${id.slice(0, 6)}`,
       token,
       connected: true
     };
-  }
-
-  function authenticateToken(token: string): ParticipantId {
-    const participantId = participantTokens.get(token);
-    if (!participantId) {
-      throw new Error("Invalid or expired token");
-    }
-    return participantId;
-  }
-
-  function authenticateRoomParticipant(code: RoomCode, token: string): { room: RoomRecord; participant: Participant } {
-    const participantId = authenticateToken(token);
-    const room = findRoom(code);
-    
-    const participant = room.participants.get(participantId);
-    if (!participant) {
-      throw new Error("Participant does not belong to this room");
-    }
-    
-    return { room, participant };
   }
 
   function findRoom(code: RoomCode): RoomRecord {
@@ -79,6 +57,15 @@ export function createRoomStore() {
       throw new Error(`Room ${code} not found`);
     }
     return room;
+  }
+
+  function authenticateRoomParticipant(room: RoomRecord, token: string): Participant {
+    for (const participant of room.participants.values()) {
+      if (participant.token === token) {
+        return participant;
+      }
+    }
+    throw new Error("Invalid or expired token");
   }
 
   function createSnapshot(room: RoomRecord, currentParticipantId: ParticipantId | null): PublicRoomSnapshot {
@@ -174,7 +161,8 @@ export function createRoomStore() {
     token: string;
     seatId: SeatId;
   }): PublicRoomSnapshot {
-    const { room, participant } = authenticateRoomParticipant(input.code, input.token);
+    const room = findRoom(input.code);
+    const participant = authenticateRoomParticipant(room, input.token);
 
     if (room.status !== "waiting") {
       throw new Error("Cannot choose seat: room is not in waiting status");
@@ -183,6 +171,11 @@ export function createRoomStore() {
     const seat = room.seats.find(s => s.id === input.seatId);
     if (!seat) {
       throw new Error(`Seat ${input.seatId} does not exist`);
+    }
+
+    // If participant is already in the requested seat, no-op
+    if (seat.participantId === participant.id) {
+      return createSnapshot(room, participant.id);
     }
 
     if (seat.participantId !== null && seat.participantId !== participant.id) {
@@ -212,7 +205,8 @@ export function createRoomStore() {
     token: string;
     ready: boolean;
   }): PublicRoomSnapshot {
-    const { room, participant } = authenticateRoomParticipant(input.code, input.token);
+    const room = findRoom(input.code);
+    const participant = authenticateRoomParticipant(room, input.token);
 
     if (room.status !== "waiting") {
       throw new Error("Cannot set ready: room is not in waiting status");
@@ -232,7 +226,8 @@ export function createRoomStore() {
     code: RoomCode;
     token: string;
   }): PublicRoomSnapshot {
-    const { room, participant } = authenticateRoomParticipant(input.code, input.token);
+    const room = findRoom(input.code);
+    const participant = authenticateRoomParticipant(room, input.token);
 
     if (participant.id !== room.hostParticipantId) {
       throw new Error("Only the host can start the game");
@@ -270,7 +265,8 @@ export function createRoomStore() {
     token: string;
     action: HandAndFootAction;
   }): PublicRoomSnapshot {
-    const { room, participant } = authenticateRoomParticipant(input.code, input.token);
+    const room = findRoom(input.code);
+    const participant = authenticateRoomParticipant(room, input.token);
 
     if (!room.gameState) {
       throw new Error("Game has not started");
@@ -292,11 +288,11 @@ export function createRoomStore() {
     code: RoomCode;
     token?: string;
   }): PublicRoomSnapshot {
+    const room = findRoom(input.code);
     if (input.token) {
-      const { room, participant } = authenticateRoomParticipant(input.code, input.token);
+      const participant = authenticateRoomParticipant(room, input.token);
       return createSnapshot(room, participant.id);
     } else {
-      const room = findRoom(input.code);
       return createSnapshot(room, null);
     }
   }
@@ -309,6 +305,11 @@ export function createRoomStore() {
     setReady,
     startGame,
     applyGameAction,
-    getSnapshot
+    getSnapshot,
+    // Test helper
+    _getInternalGameState(code: RoomCode) {
+      const room = findRoom(code);
+      return room.gameState;
+    }
   };
 }

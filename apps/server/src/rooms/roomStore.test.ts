@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { createRoomStore } from "./roomStore";
+import type { HandAndFootPlayerView } from "@hengames/game-engine";
 
 describe("roomStore", () => {
   let store: ReturnType<typeof createRoomStore>;
@@ -295,5 +296,79 @@ describe("roomStore", () => {
     expect(() => 
       store.setReady({ code: room.code, token: p1.token, ready: false })
     ).toThrow();
+  });
+
+  test("chooseSeat on the same seat is a no-op and preserves ready status", () => {
+    const { room, participant } = store.createRoom({ displayName: "Alice" });
+
+    // Choose seat and set ready
+    store.chooseSeat({ code: room.code, token: participant.token, seatId: "north" });
+    store.setReady({ code: room.code, token: participant.token, ready: true });
+
+    const beforeSnapshot = store.getSnapshot({ code: room.code });
+    expect(beforeSnapshot.seats.find(s => s.id === "north")?.ready).toBe(true);
+
+    // Choose the same seat again
+    const afterSnapshot = store.chooseSeat({ code: room.code, token: participant.token, seatId: "north" });
+
+    // Ready status should be preserved
+    expect(afterSnapshot.seats.find(s => s.id === "north")?.participantId).toBe(participant.id);
+    expect(afterSnapshot.seats.find(s => s.id === "north")?.ready).toBe(true);
+  });
+
+  test("snapshot currentView mutation does not corrupt server game state", () => {
+    const { room, participant: p1 } = store.createRoom({ displayName: "P1" });
+    const { participant: p2 } = store.joinRoom({ code: room.code, displayName: "P2" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    store.chooseSeat({ code: room.code, token: p1.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: p2.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+
+    store.setReady({ code: room.code, token: p1.token, ready: true });
+    store.setReady({ code: room.code, token: p2.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+
+    store.startGame({ code: room.code, token: p1.token });
+
+    // Check internal gameState before mutation
+    const gameStateBefore = (store as any)._getInternalGameState(room.code);
+    const internalHandLengthBefore = gameStateBefore?.players[p1.id]?.hand.length;
+    
+    const snapshot1 = store.getSnapshot({ code: room.code, token: p1.token });
+    const snapshot2Before = store.getSnapshot({ code: room.code, token: p1.token });
+    
+    // Verify both snapshots have current view
+    expect(snapshot1.currentView).toBeTruthy();
+    expect(snapshot2Before.currentView).toBeTruthy();
+    
+    const view1 = snapshot1.currentView as HandAndFootPlayerView;
+    const view2Before = snapshot2Before.currentView as HandAndFootPlayerView;
+    
+    const p1HandBefore = view2Before.players[p1.id]?.hand?.length;
+    const teamScoresBefore = view2Before.teamScores.red;
+    
+    // Mutate snapshot1
+    if (view1.players[p1.id]?.hand) {
+      view1.players[p1.id]!.hand!.pop();
+    }
+    view1.teamScores.red = 999;
+    view1.roundScores.push({ red: 100, blue: 200 });
+
+    // Check internal gameState after mutation - it should NOT have changed
+    const gameStateAfter = (store as any)._getInternalGameState(room.code);
+    const internalHandLengthAfter = gameStateAfter?.players[p1.id]?.hand.length;
+    expect(internalHandLengthAfter).toBe(internalHandLengthBefore);
+
+    // Get fresh snapshot
+    const snapshot3After = store.getSnapshot({ code: room.code, token: p1.token });
+    const view3After = snapshot3After.currentView as HandAndFootPlayerView;
+    
+    // Fresh snapshot should match the pre-mutation snapshot
+    expect(view3After.players[p1.id]?.hand?.length).toBe(p1HandBefore);
+    expect(view3After.teamScores.red).toBe(teamScoresBefore);
   });
 });

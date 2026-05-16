@@ -34,4 +34,46 @@ describe("hand and foot setup", () => {
     expect(view.players.p2?.handCount).toBe(11);
     expect(view.players.p2?.footCount).toBeUndefined();
   });
+
+  it("returns defensive copies that do not mutate internal state", () => {
+    const state = handAndFootDefinition.createInitialState({
+      seed: "test-seed",
+      playerIds: ["p1", "p2", "p3", "p4"],
+      rules: handAndFootDefinition.defaultRules
+    });
+
+    const originalHandLength = state.players.p1!.hand.length;
+    const originalTeamScoresRed = state.teamScores.red;
+    const originalRoundScoresLength = state.roundScores.length;
+    const originalMeldsLength = state.melds.length;
+
+    const view = handAndFootDefinition.getPlayerView({
+      state,
+      playerId: "p1",
+      rules: handAndFootDefinition.defaultRules
+    });
+
+    // Mutate returned view data
+    view.players.p1!.hand!.pop();
+    view.teamScores.red = 999;
+    view.roundScores.push({ red: 100, blue: 200 });
+    view.melds.push({ id: "fake", teamId: "red", rank: "3", cards: [], isBook: false, isClean: false });
+
+    // Assert original state is unchanged
+    expect(state.players.p1!.hand.length).toBe(originalHandLength);
+    expect(state.teamScores.red).toBe(originalTeamScoresRed);
+    expect(state.roundScores.length).toBe(originalRoundScoresLength);
+    expect(state.melds.length).toBe(originalMeldsLength);
+
+    // Fresh view should also be unchanged
+    const freshView = handAndFootDefinition.getPlayerView({
+      state,
+      playerId: "p1",
+      rules: handAndFootDefinition.defaultRules
+    });
+    expect(freshView.players.p1!.hand!.length).toBe(originalHandLength);
+    expect(freshView.teamScores.red).toBe(originalTeamScoresRed);
+    expect(freshView.roundScores.length).toBe(originalRoundScoresLength);
+    expect(freshView.melds.length).toBe(originalMeldsLength);
+  });
 });
