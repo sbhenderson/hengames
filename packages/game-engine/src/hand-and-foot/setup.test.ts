@@ -32,5 +32,6 @@ describe("hand and foot setup", () => {
     expect(view.players.p1?.hand).toHaveLength(11);
     expect(view.players.p2?.hand).toBeUndefined();
     expect(view.players.p2?.handCount).toBe(11);
+    expect(view.players.p2?.footCount).toBeUndefined();
   });
 });

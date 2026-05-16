@@ -17,7 +17,7 @@ export function getHandAndFootPlayerView(input: {
       hand: isCurrentViewer ? player.hand : undefined,
       foot: isCurrentViewer && player.activePile === "foot" ? player.foot : undefined,
       handCount: isCurrentViewer ? undefined : player.hand.length,
-      footCount: isCurrentViewer && player.activePile === "foot" ? undefined : player.foot.length
+      footCount: !isCurrentViewer && player.activePile === "foot" ? player.foot.length : undefined
     };
   }
 
