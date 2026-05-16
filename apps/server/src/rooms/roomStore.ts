@@ -272,6 +272,11 @@ export function createRoomStore() {
       throw new Error("Game has not started");
     }
 
+    const seat = room.seats.find(s => s.participantId === participant.id);
+    if (!seat) {
+      throw new Error("Only seated players can perform game actions");
+    }
+
     const nextState = handAndFootDefinition.applyAction({
       state: room.gameState,
       action: input.action,
