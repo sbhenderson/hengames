@@ -15,6 +15,7 @@ export function TableSurface(props: {
         <article className="pile-card">
           <span>Draw pile</span>
           <strong>{props.drawCount}</strong>
+          <small>cards</small>
         </article>
         <article className="pile-card discard-pile">
           <span>Top discard</span>
@@ -22,7 +23,7 @@ export function TableSurface(props: {
           <small>{props.discardCount} cards</small>
         </article>
       </div>
-      <p className="event-banner">{props.lastEvent}</p>
+      {props.lastEvent ? <p className="event-banner">{props.lastEvent}</p> : null}
       <div className="team-melds-grid">
         {(["red", "blue"] as const).map((teamId) => (
           <TeamMelds key={teamId} teamId={teamId} melds={props.melds.filter((meld) => meld.teamId === teamId)} />
@@ -38,7 +39,7 @@ function TeamMelds(props: {
 }) {
   return (
     <section className={`team-meld-zone ${props.teamId}-team`} aria-label={`Team ${props.teamId} books and melds`}>
-      <h2>Team {props.teamId}</h2>
+      <h3>Team {props.teamId}</h3>
       {props.melds.length ? (
         <div className="meld-list">
           {props.melds.map((meld) => (

@@ -2,6 +2,16 @@ import type { ParticipantAvatar } from "@hengames/shared";
 import { AvatarPicker } from "../AvatarPicker";
 import type { HandAndFootTableView, TeamId } from "./types";
 
+function turnStepLabel(turnStep: HandAndFootTableView["turnStep"]): string {
+  if (turnStep === "must-draw") {
+    return "Draw";
+  }
+  if (turnStep === "must-discard") {
+    return "Meld or discard";
+  }
+  return "Meld";
+}
+
 export function GameHud(props: {
   roomCode: string;
   round: number;
@@ -23,12 +33,12 @@ export function GameHud(props: {
   return (
     <header className="game-hud">
       <div className="game-hud__topline">
-        <button className="link-button game-hud__back" onClick={props.onBack}>Back</button>
+        <button type="button" className="link-button game-hud__back" onClick={props.onBack}>Back</button>
         <span className="game-hud__room">Room {props.roomCode}</span>
         <span className={props.isOwnTurn ? "turn-pill active" : "turn-pill"}>{props.isOwnTurn ? "Your turn" : "Waiting"}</span>
       </div>
       <div className="game-hud__main">
-        <div>
+        <div aria-live="polite" aria-atomic="true">
           <strong>Round {props.round}</strong>
           <p>{props.actionPrompt}</p>
         </div>
@@ -37,13 +47,19 @@ export function GameHud(props: {
           <span className="team-score blue-team">Blue {props.teamScores.blue}</span>
         </div>
       </div>
-      <div className="game-hud__meta">
+      <div className="game-hud__meta" aria-live="polite" aria-atomic="true">
         <span>Current: {props.currentPlayerName}</span>
         <span>Step: {turnStepLabel(props.turnStep)}</span>
       </div>
       {props.participant ? (
         <div className="game-hud__player">
-          <span className="avatar" style={{ background: props.participant.avatar.color }}>{props.participant.avatar.emoji}</span>
+          <span
+            className="avatar"
+            style={{ background: props.participant.avatar.color }}
+            aria-label={`${props.participant.displayName}'s avatar`}
+          >
+            {props.participant.avatar.emoji}
+          </span>
           <div>
             <strong>{props.participant.displayName}</strong>
             <p className="helper-text">
@@ -55,14 +71,4 @@ export function GameHud(props: {
       ) : null}
     </header>
   );
-}
-
-function turnStepLabel(turnStep: HandAndFootTableView["turnStep"]): string {
-  if (turnStep === "must-draw") {
-    return "Draw";
-  }
-  if (turnStep === "must-discard") {
-    return "Meld or discard";
-  }
-  return "Meld";
 }
