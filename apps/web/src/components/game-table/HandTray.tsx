@@ -80,11 +80,11 @@ export function HandTray(props: {
       {props.actionError ? <p className="action-error" role="alert">{props.actionError}</p> : null}
       <div className="hand-action-bar" aria-label="Selected card actions">
         <span>{selectedIds.length} selected</span>
-        <button disabled={!analysis.canCreateMeld || props.actionPending} onClick={() => props.onCreateMeld(selectedIds)} type="button">
+        <button disabled={!props.isOwnTurn || !analysis.canCreateMeld || props.actionPending} onClick={() => props.onCreateMeld(selectedIds)} type="button">
           Create meld
         </button>
         {analysis.addToMeldOptions.map((option) => (
-          <button disabled={props.actionPending} key={option.meldId} onClick={() => props.onAddToMeld(selectedIds, option.meldId)} type="button">
+          <button disabled={!props.isOwnTurn || props.actionPending} key={option.meldId} onClick={() => props.onAddToMeld(selectedIds, option.meldId)} type="button">
             {option.label}
           </button>
         ))}

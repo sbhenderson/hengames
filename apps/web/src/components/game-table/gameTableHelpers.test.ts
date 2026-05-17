@@ -47,13 +47,13 @@ describe("card display helpers", () => {
       teamId: "red",
       cards: [card("qa", "Q"), card("qb", "Q")],
       isBook: false,
-      isClean: true
+      isClean: false
     };
     const dirtyBuilding: MeldView = {
       id: "dirty-building",
       rank: "J",
       teamId: "blue",
-      cards: [card("ja", "J"), card("jb", "J")],
+      cards: [card("ja", "J"), card("wild", "2")],
       isBook: false,
       isClean: false
     };
