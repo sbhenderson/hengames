@@ -1,5 +1,9 @@
 # Todo items
 
+1. [] I really like the icons chosen for profiles but it'd be better if they aligned e.g. for a penguin, a fox picture should not be assigned. Anything we can do there?
+
+## Completed
+
 1. [x] Replace the title from "hengames" to something like "HenGames".
 2. [x] Use some sort of autogeneration to default a name for folks. We do not want "Anonymous is fine" but instead have something like adjective-animal. So peeking-penguin could be a good example.
 3. [x] Going on above with the autogeneration angle, let's include the concept of avatar icons of which we can maybe do some autogeneration algorithim for it (think gravatar or even just use gravatar if you can think of a reasonable way). Users, during their session, should be able to update that icon if they want.

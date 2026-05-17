@@ -26,16 +26,19 @@ export function createHttpServer(options: ServerOptions = {}) {
     createExpressMiddleware({
       router: appRouter,
       createContext: ({ req }) => ({
-        participantToken: req.headers.authorization?.replace(/^Bearer\s+/i, "")
-      })
-    })
+        participantToken: req.headers.authorization?.replace(/^Bearer\s+/i, ""),
+      }),
+    }),
   );
 
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
   });
 
-  const staticAssetsDir = options.staticAssetsDir ?? process.env.STATIC_ASSETS_DIR ?? fileURLToPath(new URL("./public", import.meta.url));
+  const staticAssetsDir =
+    options.staticAssetsDir ??
+    process.env.STATIC_ASSETS_DIR ??
+    fileURLToPath(new URL("./public", import.meta.url));
   const indexPath = path.join(staticAssetsDir, "index.html");
   if (existsSync(indexPath)) {
     app.use(express.static(staticAssetsDir));
@@ -48,10 +51,20 @@ export function createHttpServer(options: ServerOptions = {}) {
 }
 
 const port = Number(process.env.PORT ?? 3000);
-const isEntrypoint = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isEntrypoint = process.argv[1]
+  ? import.meta.url === pathToFileURL(process.argv[1]).href
+  : false;
 
 if (isEntrypoint) {
   const server = createHttpServer();
+  const signals = ["SIGTERM", "SIGINT"];
+  const shutdown = async (signal: string) => {
+    console.log(`Got signal: ${signal}`);
+    process.exit(0);
+  };
+  signals.forEach((signal) => {
+    process.on(signal, shutdown);
+  });
   server.listen(port, () => {
     console.log(`hengames server listening on http://localhost:${port}`);
   });
