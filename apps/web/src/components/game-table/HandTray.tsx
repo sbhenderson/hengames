@@ -53,10 +53,12 @@ export function HandTray(props: {
     [visibleCards, selectedCardIds, props.melds, props.teamId, props.turnStep]
   );
 
+  const pileLabel = props.activePile ?? "hand";
+
   if (!visibleCards.length) {
     return (
-      <section className="hand-tray" aria-label="Your cards">
-        <h2>Your cards</h2>
+      <section className="hand-tray" aria-label={`Your ${pileLabel}`}>
+        <h2>Your {pileLabel}</h2>
         <p className="helper-text">No visible cards right now. You may be spectating or waiting for your next pile.</p>
       </section>
     );
@@ -65,10 +67,10 @@ export function HandTray(props: {
   const selectedIds = analysis.selectedCards.map((card) => card.id);
 
   return (
-    <section className="hand-tray" aria-label="Your cards">
+    <section className="hand-tray" aria-label={`Your ${pileLabel}`}>
       <div className="hand-tray__header">
         <div>
-          <h2>Your {props.activePile ?? "hand"}</h2>
+          <h2>Your {pileLabel}</h2>
           <p className="helper-text">{visibleCards.length} cards. Tap to select; selected cards can be dragged or moved left/right. Tap a selected discard card again to discard it.</p>
         </div>
         <button disabled={!props.isOwnTurn || props.turnStep !== "must-draw" || props.actionPending} onClick={props.onDraw} type="button">
