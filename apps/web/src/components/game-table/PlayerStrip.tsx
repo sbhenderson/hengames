@@ -6,6 +6,10 @@ export type PlayerStripParticipant = {
   avatar: ParticipantAvatar;
 };
 
+function activePileLabel(activePile: PublicPlayerState["activePile"]): string {
+  return activePile === "hand" ? "Hand" : "Foot";
+}
+
 export function PlayerStrip(props: {
   players: Record<string, PublicPlayerState>;
   participants: Record<string, PlayerStripParticipant>;
@@ -17,12 +21,13 @@ export function PlayerStrip(props: {
         const participant = props.participants[playerId];
         const isCurrent = playerId === props.currentPlayerId;
         return (
-          <article className={isCurrent ? "player-chip current" : "player-chip"} key={playerId}>
+          <article aria-current={isCurrent ? "true" : undefined} className={isCurrent ? "player-chip current" : "player-chip"} key={playerId}>
             {participant ? (
               <span
                 className="avatar small"
                 style={{ background: participant.avatar.color }}
                 aria-label={`${participant.displayName}'s avatar`}
+                role="img"
               >
                 {participant.avatar.emoji}
               </span>
@@ -33,7 +38,7 @@ export function PlayerStrip(props: {
             </div>
             <div className="player-chip__counts">
               {isCurrent ? <span className="turn-dot">Turn</span> : null}
-              <span>{player.activePile}: {activePileCount(player)}</span>
+              <span>{activePileLabel(player.activePile)}: {activePileCount(player)} cards</span>
               {player.footCount !== undefined ? <span>Foot: {player.footCount}</span> : null}
             </div>
           </article>

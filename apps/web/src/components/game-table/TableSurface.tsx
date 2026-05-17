@@ -23,7 +23,9 @@ export function TableSurface(props: {
           <small>{props.discardCount} cards</small>
         </article>
       </div>
-      {props.lastEvent ? <p className="event-banner">{props.lastEvent}</p> : null}
+      <div aria-live="polite" aria-atomic="true">
+        {props.lastEvent ? <p className="event-banner">{props.lastEvent}</p> : null}
+      </div>
       <div className="team-melds-grid">
         {(["red", "blue"] as const).map((teamId) => (
           <TeamMelds key={teamId} teamId={teamId} melds={props.melds.filter((meld) => meld.teamId === teamId)} />

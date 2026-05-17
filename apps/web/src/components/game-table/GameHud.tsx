@@ -28,7 +28,7 @@ export function GameHud(props: {
   turnStep: HandAndFootTableView["turnStep"];
   avatarDisabled: boolean;
   onBack(): void;
-  onAvatarChange(avatar: ParticipantAvatar): void;
+  onAvatarChange?(avatar: ParticipantAvatar): void;
 }) {
   return (
     <header className="game-hud">
@@ -47,7 +47,7 @@ export function GameHud(props: {
           <span className="team-score blue-team">Blue {props.teamScores.blue}</span>
         </div>
       </div>
-      <div className="game-hud__meta" aria-live="polite" aria-atomic="true">
+      <div className="game-hud__meta">
         <span>Current: {props.currentPlayerName}</span>
         <span>Step: {turnStepLabel(props.turnStep)}</span>
       </div>
@@ -57,6 +57,7 @@ export function GameHud(props: {
             className="avatar"
             style={{ background: props.participant.avatar.color }}
             aria-label={`${props.participant.displayName}'s avatar`}
+            role="img"
           >
             {props.participant.avatar.emoji}
           </span>
@@ -65,7 +66,9 @@ export function GameHud(props: {
             <p className="helper-text">
               Team {props.playerTeam ?? "spectator"}{props.activePile ? `; playing from ${props.activePile}` : ""}.
             </p>
-            <AvatarPicker disabled={props.avatarDisabled} value={props.participant.avatar} onChange={props.onAvatarChange} />
+            {props.onAvatarChange ? (
+              <AvatarPicker disabled={props.avatarDisabled} value={props.participant.avatar} onChange={props.onAvatarChange} />
+            ) : null}
           </div>
         </div>
       ) : null}
