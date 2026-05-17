@@ -10,6 +10,23 @@ function activePileLabel(activePile: PublicPlayerState["activePile"]): string {
   return activePile === "hand" ? "Hand" : "Foot";
 }
 
+function activePileCount(player: PublicPlayerState): number {
+  if (player.activePile === "foot") {
+    return player.foot?.length ?? player.footCount ?? 0;
+  }
+  return player.hand?.length ?? player.handCount ?? 0;
+}
+
+function secondaryPileCount(player: PublicPlayerState): { label: string; count: number } | null {
+  if (player.activePile === "foot") {
+    const handCount = player.hand?.length ?? player.handCount;
+    return handCount === undefined ? null : { label: "Hand", count: handCount };
+  }
+
+  const footCount = player.foot?.length ?? player.footCount;
+  return footCount === undefined ? null : { label: "Foot", count: footCount };
+}
+
 export function PlayerStrip(props: {
   players: Record<string, PublicPlayerState>;
   participants: Record<string, PlayerStripParticipant>;
@@ -20,6 +37,7 @@ export function PlayerStrip(props: {
       {Object.entries(props.players).map(([playerId, player]) => {
         const participant = props.participants[playerId];
         const isCurrent = playerId === props.currentPlayerId;
+        const secondaryCount = secondaryPileCount(player);
         return (
           <article aria-current={isCurrent ? "true" : undefined} className={isCurrent ? "player-chip current" : "player-chip"} key={playerId}>
             {participant ? (
@@ -39,15 +57,11 @@ export function PlayerStrip(props: {
             <div className="player-chip__counts">
               {isCurrent ? <span className="turn-dot">Turn</span> : null}
               <span>{activePileLabel(player.activePile)}: {activePileCount(player)} cards</span>
-              {player.footCount !== undefined ? <span>Foot: {player.footCount}</span> : null}
+              {secondaryCount ? <span>{secondaryCount.label}: {secondaryCount.count} cards</span> : null}
             </div>
           </article>
         );
       })}
     </section>
   );
-}
-
-function activePileCount(player: PublicPlayerState): number {
-  return player.hand?.length ?? player.handCount ?? 0;
 }
