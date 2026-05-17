@@ -267,7 +267,6 @@ button {
 .game-hud__meta,
 .game-hud__player,
 .score-strip,
-.pile-row,
 .hand-tray__header,
 .hand-action-bar {
   align-items: center;
@@ -319,6 +318,7 @@ button {
 .game-table-shell {
   display: grid;
   gap: 0.75rem;
+  scroll-margin-top: 5rem;
 }
 
 .table-surface {
@@ -427,11 +427,13 @@ button {
 }
 
 .hand-tray {
+  background: #0f172a;
   bottom: 0.5rem;
   box-shadow: 0 -1rem 2rem rgb(2 6 23 / 0.22);
   display: grid;
   gap: 0.75rem;
   position: sticky;
+  z-index: 10;
 }
 
 .hand-tray__header {
@@ -448,7 +450,7 @@ button {
 
 .hand-action-bar button,
 .card-reorder-controls button {
-  padding: 0.45rem 0.65rem;
+  padding: 0.6rem 0.75rem;
 }
 
 .action-error {
@@ -483,6 +485,16 @@ button {
   box-shadow: 0 0 0 3px rgb(250 204 21 / 0.35);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .hand-card-shell {
+    transition: none;
+  }
+
+  .hand-card-shell.selected {
+    transform: none;
+  }
+}
+
 .playing-card.hint-possible-meld {
   box-shadow: inset 0 0 0 3px rgb(45 212 191 / 0.35);
 }
@@ -507,6 +519,7 @@ button {
   }
 
   .player-strip {
+    grid-auto-columns: auto;
     grid-auto-flow: initial;
     grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
     overflow-x: visible;
