@@ -1,12 +1,14 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { createHttpServer } from "./index.js";
+import { createRoomStore } from "./rooms/roomStore.js";
 
 const tempDirs: string[] = [];
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })));
   tempDirs.length = 0;
 });
@@ -39,5 +41,32 @@ describe("server hosting", () => {
         server.close((error) => (error ? reject(error) : resolve()));
       });
     }
+  });
+
+  test("schedules inactive room cleanup and clears it when the server closes", () => {
+    const roomStore = createRoomStore();
+    const closeInactiveRoomsSpy = vi.spyOn(roomStore, "closeInactiveRooms");
+    const unrefSpy = vi.fn();
+    const interval = { unref: unrefSpy } as unknown as NodeJS.Timeout;
+    const setIntervalSpy = vi.spyOn(global, "setInterval").mockReturnValue(interval);
+    const clearIntervalSpy = vi.spyOn(global, "clearInterval").mockImplementation(() => undefined);
+
+    const server = createHttpServer({ staticAssetsDir: "missing-static-assets", roomStore });
+
+    expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+    expect(setIntervalSpy.mock.calls[0]?.[1]).toBe(60_000);
+    expect(unrefSpy).toHaveBeenCalledTimes(1);
+
+    const cleanup = setIntervalSpy.mock.calls[0]?.[0];
+    if (typeof cleanup !== "function") {
+      throw new Error("Expected cleanup interval callback to be a function");
+    }
+    cleanup();
+
+    expect(closeInactiveRoomsSpy).toHaveBeenCalledTimes(1);
+
+    server.emit("close");
+
+    expect(clearIntervalSpy).toHaveBeenCalledWith(interval);
   });
 });

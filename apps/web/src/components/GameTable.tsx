@@ -1,5 +1,6 @@
 import type { Card } from "@hengames/shared";
 import { trpc, type RoomSnapshot } from "../api/trpc";
+import { AvatarPicker } from "./AvatarPicker";
 
 type HandAndFootTableView = {
   round: number;
@@ -21,13 +22,6 @@ const suitEmoji: Record<Card["suit"], string> = {
   spades: "♠️",
   joker: "🤡"
 };
-
-const avatarChoices = [
-  { emoji: "🦊", color: "#f97316" },
-  { emoji: "🐧", color: "#38bdf8" },
-  { emoji: "🦉", color: "#a78bfa" },
-  { emoji: "🐢", color: "#22c55e" }
-];
 
 export function GameTable(props: {
   room: RoomSnapshot;
@@ -76,25 +70,17 @@ export function GameTable(props: {
                   <p className="helper-text">
                     Team {ownPlayer?.teamId}; currently playing from your {ownPlayer?.activePile ?? "hand"}.
                   </p>
-                  <div className="avatar-picker" aria-label="Choose avatar">
-                    {avatarChoices.map((avatar) => (
-                      <button
-                        aria-label={`Use ${avatar.emoji} avatar`}
-                        className="avatar-choice"
-                        key={`${avatar.emoji}-${avatar.color}`}
-                        onClick={() =>
-                          updateAvatar.mutate({
-                            code: props.room.code,
-                            participantToken: props.participantToken,
-                            avatar
-                          })
-                        }
-                        style={{ background: avatar.color }}
-                      >
-                        {avatar.emoji}
-                      </button>
-                    ))}
-                  </div>
+                  <AvatarPicker
+                    disabled={updateAvatar.isPending}
+                    value={participant.avatar}
+                    onChange={(avatar) =>
+                      updateAvatar.mutate({
+                        code: props.room.code,
+                        participantToken: props.participantToken,
+                        avatar
+                      })
+                    }
+                  />
                 </div>
               </div>
             ) : null}

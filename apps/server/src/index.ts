@@ -11,14 +11,22 @@ import { createWsHub } from "./wsHub.js";
 
 export type ServerOptions = {
   staticAssetsDir?: string;
+  roomStore?: ReturnType<typeof createRoomStore>;
 };
 
 export function createHttpServer(options: ServerOptions = {}) {
   const app = express();
   const server = http.createServer(app);
-  const roomStore = createRoomStore();
+  const roomStore = options.roomStore ?? createRoomStore();
   const wsHub = createWsHub(server);
   const appRouter = createAppRouter({ roomStore, wsHub });
+  const cleanupInterval = setInterval(() => {
+    roomStore.closeInactiveRooms();
+  }, 60_000);
+  cleanupInterval.unref?.();
+  server.on("close", () => {
+    clearInterval(cleanupInterval);
+  });
 
   app.use(cors({ origin: true }));
   app.use(

@@ -1,10 +1,7 @@
 # Todo items
 
-1. [] I really like the icons chosen for profiles, but we need a bigger library. The way it's shown right now is strange. It'd be better for the player to have to click their icon and get a drop down of all of the various ones.
-2. [] Users should be able to view historical notifications in a special menu somewhere.
-3. [] The user's GUID is showing up when announcing the actions they did. It should use their current name.
-4. [] This doesn't seem like an actual game. It feels more like a simulation of a game placed onto a simple UI. Let's spruce this up by reordering the game page so that it feels more like a game especially thinking about playing this on their phone i.e. vertical orientation smaller screens. Use your best understanding of what browser based games look like to help here. Your cards should feel like yours - you should be able should be able to drag around their cards for ordering. Users should also be able to select multiple cards after draw for purposes of creating books. At the top should be information about the game - which round, whose turn, if it's yours, what action do you need to, I should be able to view the other team's books and how many cards in their hands. We should highlight subtly which cards can form a book or can be a part of an existing book. Etc.
-5. [] Rooms need to automatically close if there has been no activity in them for 5 minutes.
+1. [] Users should be able to view historical notifications in a special menu somewhere.
+2. [] This doesn't seem like an actual game. It feels more like a simulation of a game placed onto a simple UI. Let's spruce this up by reordering the game page so that it feels more like a game especially thinking about playing this on their phone i.e. vertical orientation smaller screens. Use your best understanding of what browser based games look like to help here. Your cards should feel like yours - you should be able should be able to drag around their cards for ordering. Users should also be able to select multiple cards after draw for purposes of creating books. At the top should be information about the game - which round, whose turn, if it's yours, what action do you need to, I should be able to view the other team's books and how many cards in their hands. We should highlight subtly which cards can form a book or can be a part of an existing book. Etc.
 
 ## Completed
 
@@ -19,3 +16,6 @@
 9. [x] In the current game, the whole game comes to a pause after the first draw 2. I think you're supposed to force the user to discard unless.
 10. [x] The lobby starter should have options for the game. For now, just include the option for how many decks should be used with 6 as the default.
 11. [x] It should be obvious whether you are going to create a red or black book.
+12. [x] I really like the icons chosen for profiles, but we need a bigger library. The way it's shown right now is strange. It'd be better for the player to have to click their icon and get a drop down of all of the various ones.
+13. [x] The user's GUID is showing up when announcing the actions they did. It should use their current name.
+14. [x] Rooms need to automatically close if there has been no activity in them for 5 minutes.

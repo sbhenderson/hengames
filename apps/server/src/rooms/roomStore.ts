@@ -1,25 +1,30 @@
 import { randomUUID } from "node:crypto";
-import type {
-  Participant,
-  ParticipantAvatar,
-  ParticipantId,
-  PublicRoomSnapshot,
-  RoomCode,
-  RoomOptions,
-  RoomStatus,
-  RoomSummary,
-  Seat,
-  SeatId
+import {
+  DEFAULT_AVATAR_CHOICES,
+  type Participant,
+  type ParticipantAvatar,
+  type ParticipantId,
+  type PublicRoomSnapshot,
+  type RoomCode,
+  type RoomOptions,
+  type RoomStatus,
+  type RoomSummary,
+  type Seat,
+  type SeatId
 } from "@hengames/shared";
-import { handAndFootDefinition, type HandAndFootAction, type HandAndFootState } from "@hengames/game-engine";
+import {
+  handAndFootDefinition,
+  type HandAndFootAction,
+  type HandAndFootPlayerView,
+  type HandAndFootState
+} from "@hengames/game-engine";
 
 const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const ROOM_CODE_LENGTH = 6;
+const ROOM_INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
 const DEFAULT_ROOM_OPTIONS: RoomOptions = { deckCount: handAndFootDefinition.defaultRules.deckCount };
 const ADJECTIVES = ["brave", "clever", "cozy", "curious", "dapper", "lucky", "peeking", "snappy"];
 const ANIMALS = ["badger", "fox", "otter", "penguin", "raven", "turtle", "walrus", "wombat"];
-const AVATAR_EMOJIS = ["🦊", "🐧", "🦝", "🦉", "🐢", "🦡", "🐙", "🦆"];
-const AVATAR_COLORS = ["#38bdf8", "#f97316", "#a78bfa", "#22c55e", "#facc15", "#fb7185", "#14b8a6", "#e879f9"];
 
 type RoomRecord = {
   code: RoomCode;
@@ -33,6 +38,7 @@ type RoomRecord = {
   rules: typeof handAndFootDefinition.defaultRules;
   gameState: HandAndFootState | null;
   createdAt: string;
+  lastActivityAt: number;
 };
 
 export function createRoomStore() {
@@ -80,10 +86,7 @@ export function createRoomStore() {
 
   function generateAvatar(id: string): ParticipantAvatar {
     const hash = hashText(id);
-    return {
-      emoji: AVATAR_EMOJIS[hash % AVATAR_EMOJIS.length]!,
-      color: AVATAR_COLORS[Math.floor(hash / AVATAR_EMOJIS.length) % AVATAR_COLORS.length]!
-    };
+    return { ...DEFAULT_AVATAR_CHOICES[hash % DEFAULT_AVATAR_CHOICES.length]! };
   }
 
   function normalizeAvatar(avatar: ParticipantAvatar): ParticipantAvatar {
@@ -136,13 +139,14 @@ export function createRoomStore() {
       connected: p.connected
     }));
 
-    let currentView = null;
+    let currentView: HandAndFootPlayerView | null = null;
     if (room.gameState && currentParticipantId) {
       currentView = handAndFootDefinition.getPlayerView({
         state: room.gameState,
         playerId: currentParticipantId,
         rules: room.rules
       });
+      currentView.lastEvent = displayParticipantNames(currentView.lastEvent, room.participants);
     }
 
     return {
@@ -158,6 +162,10 @@ export function createRoomStore() {
       spectatorIds: Array.from(room.spectatorIds),
       currentView
     };
+  }
+
+  function touchRoom(room: RoomRecord, now = Date.now()) {
+    room.lastActivityAt = now;
   }
 
   function createRoom(input: { displayName?: string; avatar?: ParticipantAvatar; options?: Partial<RoomOptions> }): {
@@ -176,6 +184,7 @@ export function createRoomStore() {
       { id: "west", teamId: "blue", participantId: null, ready: false }
     ];
 
+    const now = Date.now();
     const room: RoomRecord = {
       code,
       gameId: "hand-and-foot",
@@ -187,7 +196,8 @@ export function createRoomStore() {
       options,
       rules,
       gameState: null,
-      createdAt: new Date().toISOString()
+      createdAt: new Date(now).toISOString(),
+      lastActivityAt: now
     };
 
     rooms.set(code, room);
@@ -218,6 +228,7 @@ export function createRoomStore() {
 
     room.participants.set(participant.id, participant);
     room.spectatorIds.add(participant.id);
+    touchRoom(room);
 
     return { participant };
   }
@@ -230,6 +241,7 @@ export function createRoomStore() {
     const room = findRoom(input.code);
     const participant = authenticateRoomParticipant(room, input.token);
     participant.avatar = normalizeAvatar(input.avatar);
+    touchRoom(room);
     return createSnapshot(room, participant.id);
   }
 
@@ -252,6 +264,7 @@ export function createRoomStore() {
 
     // If participant is already in the requested seat, no-op
     if (seat.participantId === participant.id) {
+      touchRoom(room);
       return createSnapshot(room, participant.id);
     }
 
@@ -273,6 +286,7 @@ export function createRoomStore() {
 
     // Remove from spectators
     room.spectatorIds.delete(participant.id);
+    touchRoom(room);
 
     return createSnapshot(room, participant.id);
   }
@@ -295,6 +309,7 @@ export function createRoomStore() {
     }
 
     seat.ready = input.ready;
+    touchRoom(room);
 
     return createSnapshot(room, participant.id);
   }
@@ -328,6 +343,7 @@ export function createRoomStore() {
 
     room.gameState = null;
     room.status = "waiting";
+    touchRoom(room);
 
     return createSnapshot(room, participant.id);
   }
@@ -363,6 +379,7 @@ export function createRoomStore() {
         seat.ready = false;
       }
     }
+    touchRoom(room);
 
     return createSnapshot(room, participant.id);
   }
@@ -403,6 +420,7 @@ export function createRoomStore() {
 
     room.gameState = gameState;
     room.status = "playing";
+    touchRoom(room);
 
     return createSnapshot(room, participant.id);
   }
@@ -432,6 +450,7 @@ export function createRoomStore() {
     });
 
     room.gameState = nextState;
+    touchRoom(room);
 
     return createSnapshot(room, participant.id);
   }
@@ -449,6 +468,47 @@ export function createRoomStore() {
     }
   }
 
+  function closeInactiveRooms(input: {
+    inactiveMs?: number;
+    now?: number;
+  } = {}): RoomCode[] {
+    const inactiveMs = input.inactiveMs ?? ROOM_INACTIVITY_LIMIT_MS;
+    const now = input.now ?? Date.now();
+    const closedCodes: RoomCode[] = [];
+
+    for (const [code, room] of rooms.entries()) {
+      if (now - room.lastActivityAt >= inactiveMs) {
+        rooms.delete(code);
+        closedCodes.push(code);
+      }
+    }
+
+    return closedCodes;
+  }
+
+  function displayParticipantNames(event: string, participants: Map<ParticipantId, Participant>): string {
+    const displayNames = new Map<ParticipantId, string>();
+    const participantIdPatterns: string[] = [];
+
+    for (const participant of participants.values()) {
+      displayNames.set(participant.id, participant.displayName);
+      participantIdPatterns.push(escapeRegExp(participant.id));
+    }
+
+    if (participantIdPatterns.length === 0) {
+      return event;
+    }
+
+    return event.replace(
+      new RegExp(`(^|[^\\w-])(${participantIdPatterns.join("|")})(?=$|[^\\w-])`, "g"),
+      (_match, prefix: string, participantId: string) => `${prefix}${displayNames.get(participantId)}`
+    );
+  }
+
+  function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
   return {
     createRoom,
     listRooms,
@@ -461,6 +521,7 @@ export function createRoomStore() {
     startGame,
     applyGameAction,
     getSnapshot,
+    closeInactiveRooms,
     // Test helper
     _getInternalGameState(code: RoomCode) {
       const room = findRoom(code);

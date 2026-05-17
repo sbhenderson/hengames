@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createRoomStore } from "./roomStore.js";
 import type { HandAndFootPlayerView } from "@hengames/game-engine";
 
@@ -7,6 +7,10 @@ describe("roomStore", () => {
 
   beforeEach(() => {
     store = createRoomStore();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   test("createRoom creates a discoverable Hand and Foot room", () => {
@@ -128,6 +132,26 @@ describe("roomStore", () => {
     expect(participant).toBeTruthy();
   });
 
+  test("closeInactiveRooms removes rooms idle for five minutes and keeps recently active rooms", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-17T12:00:00.000Z"));
+    const stale = store.createRoom({ displayName: "Stale Host" });
+    const active = store.createRoom({ displayName: "Active Host" });
+
+    vi.advanceTimersByTime(4.5 * 60 * 1000);
+    store.joinRoom({ code: active.room.code, displayName: "Active Guest" });
+    vi.advanceTimersByTime(30 * 1000);
+
+    const closedCodes = store.closeInactiveRooms({
+      inactiveMs: 5 * 60 * 1000,
+      now: Date.now()
+    });
+
+    expect(closedCodes).toEqual([stale.room.code]);
+    expect(store.listRooms().map((room) => room.code)).toEqual([active.room.code]);
+    expect(() => store.getSnapshot({ code: stale.room.code })).toThrow(`Room ${stale.room.code} not found`);
+  });
+
   test("chooseSeat allows participant to take an empty seat", () => {
     const { room, participant: host } = store.createRoom({ displayName: "Alice" });
 
@@ -193,6 +217,60 @@ describe("roomStore", () => {
     expect(result.status).toBe("playing");
     expect(result.phase).toBe("playing");
     expect(result.currentView).toBeTruthy();
+  });
+
+  test("game action announcements use player display names instead of participant IDs", () => {
+    const { room, participant: p1 } = store.createRoom({ displayName: "P1" });
+    const { participant: p2 } = store.joinRoom({ code: room.code, displayName: "P2" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    store.chooseSeat({ code: room.code, token: p1.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: p2.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+    store.setReady({ code: room.code, token: p1.token, ready: true });
+    store.setReady({ code: room.code, token: p2.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+    store.startGame({ code: room.code, token: p1.token });
+
+    const snapshot = store.applyGameAction({
+      code: room.code,
+      token: p1.token,
+      action: { type: "draw" }
+    });
+    const view = snapshot.currentView as HandAndFootPlayerView;
+
+    expect(view.lastEvent).toBe("P1 drew 2 cards.");
+    expect(view.lastEvent).not.toContain(p1.id);
+  });
+
+  test("game action announcements do not cascade display name replacements", () => {
+    const { room, participant: p1 } = store.createRoom({ displayName: "P1" });
+    const { participant: p2 } = store.joinRoom({ code: room.code, displayName: "P2" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+    p1.displayName = p2.id;
+
+    store.chooseSeat({ code: room.code, token: p1.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: p2.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+    store.setReady({ code: room.code, token: p1.token, ready: true });
+    store.setReady({ code: room.code, token: p2.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+    store.startGame({ code: room.code, token: p1.token });
+
+    const snapshot = store.applyGameAction({
+      code: room.code,
+      token: p1.token,
+      action: { type: "draw" }
+    });
+    const view = snapshot.currentView as HandAndFootPlayerView;
+
+    expect(view.lastEvent).toBe(`${p2.id} drew 2 cards.`);
   });
 
   test("startGame fails if not all seats are occupied", () => {
@@ -366,6 +444,25 @@ describe("roomStore", () => {
     // Ready status should be preserved
     expect(afterSnapshot.seats.find(s => s.id === "north")?.participantId).toBe(participant.id);
     expect(afterSnapshot.seats.find(s => s.id === "north")?.ready).toBe(true);
+  });
+
+  test("chooseSeat on the same seat still counts as room activity", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-17T12:00:00.000Z"));
+    const { room, participant } = store.createRoom({ displayName: "Alice" });
+
+    store.chooseSeat({ code: room.code, token: participant.token, seatId: "north" });
+    vi.advanceTimersByTime(4.5 * 60 * 1000);
+    store.chooseSeat({ code: room.code, token: participant.token, seatId: "north" });
+    vi.advanceTimersByTime(30 * 1000);
+
+    const closedCodes = store.closeInactiveRooms({
+      inactiveMs: 5 * 60 * 1000,
+      now: Date.now()
+    });
+
+    expect(closedCodes).toEqual([]);
+    expect(store.getSnapshot({ code: room.code }).code).toBe(room.code);
   });
 
   test("snapshot currentView mutation does not corrupt server game state", () => {
