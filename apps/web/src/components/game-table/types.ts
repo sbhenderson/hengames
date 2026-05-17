@@ -1,6 +1,6 @@
-import type { Card } from "@hengames/shared";
+import type { Card, TeamId } from "@hengames/shared";
 
-export type TeamId = "red" | "blue";
+export type { TeamId };
 
 export type HandAndFootTableView = {
   phase: "playing" | "round-over" | "game-over";

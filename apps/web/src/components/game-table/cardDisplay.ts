@@ -18,14 +18,12 @@ export function formatCard(card: Card): string {
 }
 
 export function bookLabel(meld: MeldView): string {
-  const hasWilds = meld.cards.some((card) => card.rank === "2" || card.rank === "JOKER");
   if (meld.isBook) {
-    return hasWilds ? "Black dirty book" : "Red clean book";
+    return meld.isClean ? "Red clean book" : "Black dirty book";
   }
-  return hasWilds ? "Building black book" : "Building red book";
+  return meld.isClean ? "Building red book" : "Building black book";
 }
 
 export function bookClassName(meld: MeldView): string {
-  const hasWilds = meld.cards.some((card) => card.rank === "2" || card.rank === "JOKER");
-  return hasWilds ? "book-badge dirty-book" : "book-badge clean-book";
+  return meld.isClean ? "book-badge clean-book" : "book-badge dirty-book";
 }

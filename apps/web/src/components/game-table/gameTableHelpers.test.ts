@@ -19,26 +19,53 @@ describe("card display helpers", () => {
   });
 
   test("labels clean and dirty books with text and classes", () => {
-    const clean: MeldView = {
-      id: "clean",
+    const cleanBook: MeldView = {
+      id: "clean-book",
       rank: "8",
       teamId: "red",
       cards: [card("8a", "8"), card("8b", "8"), card("8c", "8")],
       isBook: true,
       isClean: true
     };
-    const dirty: MeldView = {
-      id: "dirty",
+    const dirtyBook: MeldView = {
+      id: "dirty-book",
       rank: "K",
       teamId: "blue",
-      cards: [card("ka", "K"), card("kb", "K"), card("wild", "2")],
+      cards: [card("ka", "K"), card("kb", "K"), card("kc", "K")],
+      isBook: true,
+      isClean: false
+    };
+    const cleanBuilding: MeldView = {
+      id: "clean-building",
+      rank: "Q",
+      teamId: "red",
+      cards: [card("qa", "Q"), card("qb", "Q")],
+      isBook: false,
+      isClean: true
+    };
+    const dirtyBuilding: MeldView = {
+      id: "dirty-building",
+      rank: "J",
+      teamId: "blue",
+      cards: [card("ja", "J"), card("jb", "J")],
       isBook: false,
       isClean: false
     };
 
-    expect(bookLabel(clean)).toBe("Red clean book");
-    expect(bookClassName(clean)).toBe("book-badge clean-book");
-    expect(bookLabel(dirty)).toBe("Building black book");
-    expect(bookClassName(dirty)).toBe("book-badge dirty-book");
+    // Clean completed book
+    expect(bookLabel(cleanBook)).toBe("Red clean book");
+    expect(bookClassName(cleanBook)).toBe("book-badge clean-book");
+
+    // Dirty completed book
+    expect(bookLabel(dirtyBook)).toBe("Black dirty book");
+    expect(bookClassName(dirtyBook)).toBe("book-badge dirty-book");
+
+    // Clean in-progress meld
+    expect(bookLabel(cleanBuilding)).toBe("Building red book");
+    expect(bookClassName(cleanBuilding)).toBe("book-badge clean-book");
+
+    // Dirty in-progress meld
+    expect(bookLabel(dirtyBuilding)).toBe("Building black book");
+    expect(bookClassName(dirtyBuilding)).toBe("book-badge dirty-book");
   });
 });
