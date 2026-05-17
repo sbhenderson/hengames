@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ParticipantAvatar } from "@hengames/shared";
 import { trpc, type RoomSnapshot } from "../api/trpc";
 import { GameHud } from "./game-table/GameHud";
@@ -16,19 +16,28 @@ export function GameTable(props: {
   const action = trpc.gameAction.useMutation();
   const updateAvatar = trpc.updateAvatar.useMutation();
   const [actionError, setActionError] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const view = props.room.currentView as HandAndFootTableView | null;
+
+  useEffect(() => {
+    setActionError(null);
+  }, [view?.currentPlayerId, view?.turnStep]);
 
   const currentParticipantId = props.room.currentParticipantId;
   const ownPlayer = currentParticipantId && view ? view.players[currentParticipantId] : undefined;
   const visibleCards = ownPlayer?.activePile === "foot" ? ownPlayer.foot : ownPlayer?.hand;
   const participant = props.room.participants.find((candidate) => candidate.id === currentParticipantId);
-  const participants = props.room.participants.reduce<Record<string, PlayerStripParticipant>>((result, candidate) => {
-    result[candidate.id] = {
-      displayName: candidate.displayName,
-      avatar: candidate.avatar
-    };
-    return result;
-  }, {});
+  const participants = useMemo(
+    () =>
+      props.room.participants.reduce<Record<string, PlayerStripParticipant>>((result, candidate) => {
+        result[candidate.id] = {
+          displayName: candidate.displayName,
+          avatar: candidate.avatar
+        };
+        return result;
+      }, {}),
+    [props.room.participants]
+  );
 
   if (!view) {
     return (
@@ -61,11 +70,22 @@ export function GameTable(props: {
   };
 
   const updateParticipantAvatar = (avatar: ParticipantAvatar) => {
-    updateAvatar.mutate({
-      code: props.room.code,
-      participantToken: props.participantToken,
-      avatar
-    });
+    setAvatarError(null);
+    updateAvatar.mutate(
+      {
+        code: props.room.code,
+        participantToken: props.participantToken,
+        avatar
+      },
+      {
+        onError(error) {
+          setAvatarError(error.message);
+        },
+        onSuccess() {
+          setAvatarError(null);
+        }
+      }
+    );
   };
 
   return (
@@ -74,6 +94,7 @@ export function GameTable(props: {
         actionPrompt={turnActionPrompt({ isOwnTurn, currentPlayerName, turnStep: view.turnStep })}
         activePile={ownPlayer?.activePile}
         avatarDisabled={updateAvatar.isPending}
+        avatarError={avatarError}
         currentPlayerName={currentPlayerName}
         isOwnTurn={isOwnTurn}
         onAvatarChange={updateParticipantAvatar}

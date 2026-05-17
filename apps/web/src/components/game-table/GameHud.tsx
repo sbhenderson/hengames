@@ -27,6 +27,7 @@ export function GameHud(props: {
   activePile?: "hand" | "foot";
   turnStep: HandAndFootTableView["turnStep"];
   avatarDisabled: boolean;
+  avatarError?: string | null;
   onBack(): void;
   onAvatarChange?(avatar: ParticipantAvatar): void;
 }) {
@@ -69,6 +70,7 @@ export function GameHud(props: {
             {props.onAvatarChange ? (
               <AvatarPicker disabled={props.avatarDisabled} value={props.participant.avatar} onChange={props.onAvatarChange} />
             ) : null}
+            {props.avatarError ? <p className="action-error" role="alert">{props.avatarError}</p> : null}
           </div>
         </div>
       ) : null}
