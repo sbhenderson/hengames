@@ -242,3 +242,297 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+.game-page {
+  max-width: 1180px;
+  padding: 0.75rem;
+}
+
+.game-hud {
+  background: linear-gradient(135deg, #0f172a, #12312f);
+  border: 1px solid #2dd4bf;
+  border-radius: 1.25rem;
+  box-shadow: 0 1rem 2rem rgb(2 6 23 / 0.35);
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.85rem;
+  position: sticky;
+  top: 0.5rem;
+  z-index: 20;
+}
+
+.game-hud__topline,
+.game-hud__main,
+.game-hud__meta,
+.game-hud__player,
+.score-strip,
+.pile-row,
+.hand-tray__header,
+.hand-action-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.game-hud__main {
+  justify-content: space-between;
+}
+
+.game-hud__main p,
+.game-hud__player p {
+  margin: 0.15rem 0 0;
+}
+
+.game-hud__room,
+.turn-pill,
+.team-score,
+.turn-dot {
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0.25rem 0.6rem;
+}
+
+.game-hud__room,
+.turn-pill {
+  background: rgb(15 23 42 / 0.85);
+  color: #e2e8f0;
+}
+
+.turn-pill.active {
+  background: #facc15;
+  color: #422006;
+}
+
+.team-score.red-team {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.team-score.blue-team {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.game-table-shell {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.table-surface {
+  background:
+    radial-gradient(circle at top, rgb(45 212 191 / 0.16), transparent 38%),
+    linear-gradient(180deg, #064e3b, #052e2b);
+  border: 1px solid #0f766e;
+  border-radius: 1.5rem;
+  box-shadow: inset 0 0 2rem rgb(2 6 23 / 0.28);
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+}
+
+.pile-row {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.pile-card,
+.event-banner,
+.team-meld-zone,
+.player-chip,
+.hand-tray {
+  background: rgb(15 23 42 / 0.86);
+  border: 1px solid rgb(148 163 184 / 0.25);
+  border-radius: 1rem;
+  padding: 0.75rem;
+}
+
+.pile-card {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 4.75rem;
+}
+
+.pile-card strong {
+  font-size: 1.15rem;
+}
+
+.event-banner {
+  margin: 0;
+}
+
+.team-melds-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.team-meld-zone h3,
+.hand-tray h2 {
+  margin: 0 0 0.5rem;
+}
+
+.meld-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.meld-card {
+  align-items: center;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 0.85rem;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.65rem;
+}
+
+.meld-card.complete {
+  border-color: #facc15;
+}
+
+.player-strip {
+  display: grid;
+  gap: 0.5rem;
+  grid-auto-columns: minmax(13rem, 1fr);
+  grid-auto-flow: column;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.player-chip {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: auto 1fr;
+  min-width: 13rem;
+}
+
+.player-chip.current {
+  border-color: #facc15;
+}
+
+.player-chip__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  grid-column: 1 / -1;
+}
+
+.turn-dot {
+  background: #facc15;
+  color: #422006;
+}
+
+.hand-tray {
+  bottom: 0.5rem;
+  box-shadow: 0 -1rem 2rem rgb(2 6 23 / 0.22);
+  display: grid;
+  gap: 0.75rem;
+  position: sticky;
+}
+
+.hand-tray__header {
+  justify-content: space-between;
+}
+
+.hand-action-bar {
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  overflow-x: auto;
+  padding: 0.45rem;
+}
+
+.hand-action-bar button,
+.card-reorder-controls button {
+  padding: 0.45rem 0.65rem;
+}
+
+.action-error {
+  background: #fee2e2;
+  border-radius: 0.75rem;
+  color: #991b1b;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+}
+
+.hand-card-row {
+  display: grid;
+  gap: 0.45rem;
+  grid-auto-columns: minmax(3.4rem, 4.4rem);
+  grid-auto-flow: column;
+  overflow-x: auto;
+  padding: 0.25rem 0.1rem 0.6rem;
+}
+
+.hand-card-shell {
+  display: grid;
+  gap: 0.25rem;
+  transition: transform 150ms ease;
+}
+
+.hand-card-shell.selected {
+  transform: translateY(-0.45rem);
+}
+
+.hand-card-shell.selected .playing-card {
+  border-color: #facc15;
+  box-shadow: 0 0 0 3px rgb(250 204 21 / 0.35);
+}
+
+.playing-card.hint-possible-meld {
+  box-shadow: inset 0 0 0 3px rgb(45 212 191 / 0.35);
+}
+
+.playing-card.hint-existing-meld {
+  border-left: 0.35rem solid #38bdf8;
+}
+
+.playing-card.hint-wild-helper {
+  background: linear-gradient(180deg, #f8fafc, #ede9fe);
+}
+
+.card-reorder-controls {
+  display: grid;
+  gap: 0.2rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (min-width: 760px) {
+  .team-melds-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .player-strip {
+    grid-auto-flow: initial;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    overflow-x: visible;
+  }
+
+  .hand-card-row {
+    grid-auto-columns: minmax(3.75rem, 4.8rem);
+  }
+}
+
+@media (min-width: 980px) {
+  .game-table-shell {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+  }
+
+  .table-surface {
+    grid-column: 1;
+  }
+
+  .player-strip {
+    align-self: start;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .hand-tray {
+    grid-column: 1 / -1;
+  }
+}
