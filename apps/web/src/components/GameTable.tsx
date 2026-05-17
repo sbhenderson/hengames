@@ -21,6 +21,7 @@ export function GameTable(props: {
 
   useEffect(() => {
     setActionError(null);
+    setAvatarError(null);
   }, [props.participantToken, props.room.code, props.room.gameId, view?.currentPlayerId, view?.turnStep]);
 
   const currentParticipantId = props.room.currentParticipantId;
