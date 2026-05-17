@@ -15,6 +15,7 @@ export function PlayingCardButton(props: {
   onDragStart(): void;
   onDragEnter(): void;
   onDragEnd(): void;
+  onDragOver(): void;
 }) {
   const hintClass = props.hint ? ` hint-${props.hint}` : "";
   return (
@@ -28,15 +29,19 @@ export function PlayingCardButton(props: {
         onDragStart={props.onDragStart}
         onDragEnter={props.onDragEnter}
         onDragEnd={props.onDragEnd}
+        onDragOver={(event) => {
+          event.preventDefault();
+          props.onDragOver();
+        }}
         type="button"
       >
         <span>{formatCardRank(props.card)}</span>
         <small>{suitEmoji[props.card.suit]}</small>
       </button>
       {props.selected ? (
-        <div className="card-reorder-controls" aria-label={`Reorder ${formatCardAccessibleName(props.card)}`}>
-          <button disabled={!props.canMoveLeft} onClick={props.onMoveLeft} type="button">Left</button>
-          <button disabled={!props.canMoveRight} onClick={props.onMoveRight} type="button">Right</button>
+        <div className="card-reorder-controls" role="group" aria-label={`Reorder ${formatCardAccessibleName(props.card)}`}>
+          <button disabled={!props.canMoveLeft} onClick={props.onMoveLeft} type="button">Move left</button>
+          <button disabled={!props.canMoveRight} onClick={props.onMoveRight} type="button">Move right</button>
         </div>
       ) : null}
     </div>

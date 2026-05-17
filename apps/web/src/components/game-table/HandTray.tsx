@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Card } from "@hengames/shared";
 import { analyzeSelectedCards, getCardHints, reconcileCardOrder } from "./gameTableHelpers";
 import { PlayingCardButton } from "./PlayingCardButton";
@@ -20,7 +20,7 @@ export function HandTray(props: {
 }) {
   const [orderedCardIds, setOrderedCardIds] = useState<string[]>([]);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
-  const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
+  const draggedCardIdRef = useRef<string | null>(null);
   const visibleCards = useMemo(() => props.cards ?? [], [props.cards]);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export function HandTray(props: {
     return (
       <section className="hand-tray">
         <h2>Your cards</h2>
-        <p className="helper-text">You are spectating public state.</p>
+        <p className="helper-text">No visible cards right now. You may be spectating or waiting for your next pile.</p>
       </section>
     );
   }
@@ -69,7 +69,7 @@ export function HandTray(props: {
       <div className="hand-tray__header">
         <div>
           <h2>Your {props.activePile ?? "hand"}</h2>
-          <p className="helper-text">{visibleCards.length} cards. Tap to select; drag selected workspace cards to reorder.</p>
+          <p className="helper-text">{visibleCards.length} cards. Tap to select; selected cards can be dragged or moved left/right. Tap a selected discard card again to discard it.</p>
         </div>
         <button disabled={!props.isOwnTurn || props.turnStep !== "must-draw" || props.actionPending} onClick={props.onDraw} type="button">
           Draw 2
@@ -108,16 +108,22 @@ export function HandTray(props: {
             card={card}
             canMoveLeft={index > 0}
             canMoveRight={index < orderedCards.length - 1}
-            draggable
+            draggable={selectedCardIds.includes(card.id)}
             hint={hints[card.id]}
             key={card.id}
-            onDragEnd={() => setDraggedCardId(null)}
+            onDragEnd={() => {
+              draggedCardIdRef.current = null;
+            }}
             onDragEnter={() => {
+              const draggedCardId = draggedCardIdRef.current;
               if (draggedCardId && draggedCardId !== card.id) {
                 setOrderedCardIds((currentOrder) => moveBefore(currentOrder, draggedCardId, card.id));
               }
             }}
-            onDragStart={() => setDraggedCardId(card.id)}
+            onDragStart={() => {
+              draggedCardIdRef.current = card.id;
+            }}
+            onDragOver={() => undefined}
             onMoveLeft={() => setOrderedCardIds((currentOrder) => moveByOffset(currentOrder, card.id, -1))}
             onMoveRight={() => setOrderedCardIds((currentOrder) => moveByOffset(currentOrder, card.id, 1))}
             onToggle={() => {
@@ -155,7 +161,11 @@ function moveByOffset(cardIds: string[], cardId: string, offset: -1 | 1): string
     return cardIds;
   }
   const nextOrder = [...cardIds];
-  const [card] = nextOrder.splice(currentIndex, 1) as [string];
+  const card = nextOrder[currentIndex];
+  if (!card) {
+    return cardIds;
+  }
+  nextOrder.splice(currentIndex, 1);
   nextOrder.splice(nextIndex, 0, card);
   return nextOrder;
 }
