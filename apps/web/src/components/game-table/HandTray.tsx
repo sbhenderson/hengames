@@ -128,7 +128,7 @@ export function HandTray(props: {
             onMoveLeft={() => setOrderedCardIds((currentOrder) => moveByOffset(currentOrder, card.id, -1))}
             onMoveRight={() => setOrderedCardIds((currentOrder) => moveByOffset(currentOrder, card.id, 1))}
             onToggle={() => {
-              if (props.isOwnTurn && props.turnStep === "must-discard" && selectedCardIds.length === 1 && selectedCardIds[0] === card.id) {
+              if (props.isOwnTurn && !props.actionPending && props.turnStep === "must-discard" && selectedCardIds.length === 1 && selectedCardIds[0] === card.id) {
                 props.onDiscard(card.id);
                 return;
               }
