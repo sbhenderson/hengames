@@ -175,6 +175,45 @@ describe("appRouter", () => {
     });
   });
 
+  describe("host controls - resetLobby and kickParticipant", () => {
+    test("resetLobby calls room store and broadcasts", async () => {
+      const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
+      await router
+        .createCaller({})
+        .chooseSeat({
+          code: created.room.code,
+          seatId: "north",
+          participantToken: created.participant.token
+        });
+
+      mockWsHub.broadcastRoom.mockClear();
+
+      const snapshot = await router.createCaller({}).resetLobby({
+        code: created.room.code,
+        participantToken: created.participant.token
+      });
+
+      expect(snapshot.seats.every(seat => seat.participantId === null)).toBe(true);
+      expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(created.room.code, roomStore);
+    });
+
+    test("kickParticipant calls room store and broadcasts", async () => {
+      const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
+      const joined = await router.createCaller({}).joinRoom({ code: created.room.code, displayName: "Bob" });
+
+      mockWsHub.broadcastRoom.mockClear();
+
+      const snapshot = await router.createCaller({}).kickParticipant({
+        code: created.room.code,
+        participantToken: created.participant.token,
+        targetParticipantId: joined.participant.id
+      });
+
+      expect(snapshot.participants.find(participant => participant.id === joined.participant.id)).toBeUndefined();
+      expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(created.room.code, roomStore);
+    });
+  });
+
   describe("startGame - token mapping and broadcast", () => {
     test("accepts participantToken as input and broadcasts", async () => {
       // Setup: create room, join 3 more players, all choose seats and ready up

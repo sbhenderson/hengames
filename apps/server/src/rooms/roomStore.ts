@@ -222,6 +222,74 @@ export function createRoomStore() {
     return createSnapshot(room, participant.id);
   }
 
+  function requireHost(room: RoomRecord, participantId: string) {
+    if (room.hostParticipantId !== participantId) {
+      throw new Error("Only the host can do that.");
+    }
+  }
+
+  function resetLobby(input: {
+    code: RoomCode;
+    participantToken: string;
+  }): PublicRoomSnapshot {
+    const room = findRoom(input.code);
+    const participant = authenticateRoomParticipant(room, input.participantToken);
+
+    requireHost(room, participant.id);
+
+    if (room.status !== "waiting") {
+      throw new Error("Only waiting rooms can be reset in the first version.");
+    }
+
+    for (const seat of room.seats) {
+      if (seat.participantId) {
+        room.spectatorIds.add(seat.participantId);
+      }
+      seat.participantId = null;
+      seat.ready = false;
+    }
+
+    room.gameState = null;
+    room.status = "waiting";
+
+    return createSnapshot(room, participant.id);
+  }
+
+  function kickParticipant(input: {
+    code: RoomCode;
+    participantToken: string;
+    targetParticipantId: string;
+  }): PublicRoomSnapshot {
+    const room = findRoom(input.code);
+    const participant = authenticateRoomParticipant(room, input.participantToken);
+
+    requireHost(room, participant.id);
+
+    if (room.status !== "waiting") {
+      throw new Error("Participants can only be kicked before the game starts.");
+    }
+
+    if (input.targetParticipantId === room.hostParticipantId) {
+      throw new Error("The host cannot kick themselves.");
+    }
+
+    if (!room.participants.has(input.targetParticipantId)) {
+      throw new Error("Participant not found.");
+    }
+
+    room.participants.delete(input.targetParticipantId);
+    room.spectatorIds.delete(input.targetParticipantId);
+
+    for (const seat of room.seats) {
+      if (seat.participantId === input.targetParticipantId) {
+        seat.participantId = null;
+        seat.ready = false;
+      }
+    }
+
+    return createSnapshot(room, participant.id);
+  }
+
   function startGame(input: {
     code: RoomCode;
     token: string;
@@ -233,9 +301,7 @@ export function createRoomStore() {
       throw new Error("Cannot start game: room is not in waiting status");
     }
 
-    if (participant.id !== room.hostParticipantId) {
-      throw new Error("Only the host can start the game");
-    }
+    requireHost(room, participant.id);
 
     // Check all seats are occupied
     const allSeatsOccupied = room.seats.every(s => s.participantId !== null);
@@ -312,6 +378,8 @@ export function createRoomStore() {
     joinRoom,
     chooseSeat,
     setReady,
+    resetLobby,
+    kickParticipant,
     startGame,
     applyGameAction,
     getSnapshot,

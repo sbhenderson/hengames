@@ -98,6 +98,33 @@ export function createAppRouter(input: {
         return snapshot;
       }),
 
+    resetLobby: publicProcedure
+      .input(
+        z.object({
+          code: z.string(),
+          participantToken: z.string()
+        })
+      )
+      .mutation(({ input }) => {
+        const snapshot = roomStore.resetLobby(input);
+        wsHub.broadcastRoom(input.code, roomStore);
+        return snapshot;
+      }),
+
+    kickParticipant: publicProcedure
+      .input(
+        z.object({
+          code: z.string(),
+          participantToken: z.string(),
+          targetParticipantId: z.string()
+        })
+      )
+      .mutation(({ input }) => {
+        const snapshot = roomStore.kickParticipant(input);
+        wsHub.broadcastRoom(input.code, roomStore);
+        return snapshot;
+      }),
+
     startGame: publicProcedure
       .input(
         z.object({

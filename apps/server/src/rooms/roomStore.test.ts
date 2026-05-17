@@ -418,4 +418,96 @@ describe("roomStore", () => {
       store.startGame({ code: room.code, token: p1.token })
     ).toThrow("Cannot start game: room is not in waiting status");
   });
+
+  test("resetLobby lets the host clear seats and return players to spectators", () => {
+    const { room, participant: host } = store.createRoom({ displayName: "Host" });
+    const { participant: guest } = store.joinRoom({ code: room.code, displayName: "Guest" });
+
+    store.chooseSeat({ code: room.code, token: host.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: guest.token, seatId: "east" });
+    store.setReady({ code: room.code, token: host.token, ready: true });
+    store.setReady({ code: room.code, token: guest.token, ready: true });
+
+    const snapshot = store.resetLobby({ code: room.code, participantToken: host.token });
+
+    expect(snapshot.status).toBe("waiting");
+    expect(snapshot.seats.every(seat => seat.participantId === null && seat.ready === false)).toBe(true);
+    expect(snapshot.spectatorIds).toContain(host.id);
+    expect(snapshot.spectatorIds).toContain(guest.id);
+    expect(snapshot.currentParticipantId).toBe(host.id);
+  });
+
+  test("resetLobby rejects non-hosts and active games", () => {
+    const { room, participant: host } = store.createRoom({ displayName: "Host" });
+    const { participant: guest } = store.joinRoom({ code: room.code, displayName: "Guest" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    expect(() => store.resetLobby({ code: room.code, participantToken: guest.token })).toThrow("Only the host can do that.");
+
+    store.chooseSeat({ code: room.code, token: host.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: guest.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+    store.setReady({ code: room.code, token: host.token, ready: true });
+    store.setReady({ code: room.code, token: guest.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+    store.startGame({ code: room.code, token: host.token });
+
+    expect(() => store.resetLobby({ code: room.code, participantToken: host.token })).toThrow(
+      "Only waiting rooms can be reset in the first version."
+    );
+  });
+
+  test("kickParticipant lets the host remove a non-host before the game starts", () => {
+    const { room, participant: host } = store.createRoom({ displayName: "Host" });
+    const { participant: guest } = store.joinRoom({ code: room.code, displayName: "Guest" });
+
+    store.chooseSeat({ code: room.code, token: guest.token, seatId: "east" });
+    store.setReady({ code: room.code, token: guest.token, ready: true });
+
+    const snapshot = store.kickParticipant({
+      code: room.code,
+      participantToken: host.token,
+      targetParticipantId: guest.id
+    });
+
+    expect(snapshot.participants.find(participant => participant.id === guest.id)).toBeUndefined();
+    expect(snapshot.spectatorIds).not.toContain(guest.id);
+    expect(snapshot.seats.find(seat => seat.id === "east")?.participantId).toBeNull();
+    expect(snapshot.seats.find(seat => seat.id === "east")?.ready).toBe(false);
+    expect(snapshot.currentParticipantId).toBe(host.id);
+  });
+
+  test("kickParticipant rejects non-hosts, self-kicks, missing participants, and active games", () => {
+    const { room, participant: host } = store.createRoom({ displayName: "Host" });
+    const { participant: guest } = store.joinRoom({ code: room.code, displayName: "Guest" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    expect(() =>
+      store.kickParticipant({ code: room.code, participantToken: guest.token, targetParticipantId: p3.id })
+    ).toThrow("Only the host can do that.");
+    expect(() =>
+      store.kickParticipant({ code: room.code, participantToken: host.token, targetParticipantId: host.id })
+    ).toThrow("The host cannot kick themselves.");
+    expect(() =>
+      store.kickParticipant({ code: room.code, participantToken: host.token, targetParticipantId: "missing" })
+    ).toThrow("Participant not found.");
+
+    store.chooseSeat({ code: room.code, token: host.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: guest.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+    store.setReady({ code: room.code, token: host.token, ready: true });
+    store.setReady({ code: room.code, token: guest.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+    store.startGame({ code: room.code, token: host.token });
+
+    expect(() =>
+      store.kickParticipant({ code: room.code, participantToken: host.token, targetParticipantId: guest.id })
+    ).toThrow("Participants can only be kicked before the game starts.");
+  });
 });

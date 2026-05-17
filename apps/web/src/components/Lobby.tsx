@@ -10,6 +10,8 @@ export function Lobby(props: {
 }) {
   const chooseSeat = trpc.chooseSeat.useMutation();
   const setReady = trpc.setReady.useMutation();
+  const resetLobby = trpc.resetLobby.useMutation();
+  const kickParticipant = trpc.kickParticipant.useMutation();
   const startGame = trpc.startGame.useMutation();
 
   const participant = props.room.participants.find((candidate) => candidate.id === props.room.currentParticipantId);
@@ -52,6 +54,34 @@ export function Lobby(props: {
           <button onClick={() => startGame.mutate({ code: props.room.code, participantToken: props.participantToken })}>Start game</button>
         ) : null}
       </section>
+      {isHost ? (
+        <section className="panel">
+          <h2>Host controls</h2>
+          <button onClick={() => resetLobby.mutate({ code: props.room.code, participantToken: props.participantToken })}>
+            Reset lobby seats
+          </button>
+          <div className="room-list">
+            {props.room.participants
+              .filter((candidate) => candidate.id !== props.room.hostParticipantId)
+              .map((candidate) => (
+                <article className="room-card" key={candidate.id}>
+                  <span>{candidate.displayName}</span>
+                  <button
+                    onClick={() =>
+                      kickParticipant.mutate({
+                        code: props.room.code,
+                        participantToken: props.participantToken,
+                        targetParticipantId: candidate.id
+                      })
+                    }
+                  >
+                    Kick
+                  </button>
+                </article>
+              ))}
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }
