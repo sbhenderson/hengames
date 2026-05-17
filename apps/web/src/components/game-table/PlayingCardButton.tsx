@@ -15,7 +15,6 @@ export function PlayingCardButton(props: {
   onDragStart(): void;
   onDragEnter(): void;
   onDragEnd(): void;
-  onDragOver(): void;
 }) {
   const hintClass = props.hint ? ` hint-${props.hint}` : "";
   return (
@@ -31,7 +30,6 @@ export function PlayingCardButton(props: {
         onDragEnd={props.onDragEnd}
         onDragOver={(event) => {
           event.preventDefault();
-          props.onDragOver();
         }}
         type="button"
       >

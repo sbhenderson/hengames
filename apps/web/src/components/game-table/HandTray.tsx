@@ -55,7 +55,7 @@ export function HandTray(props: {
 
   if (!visibleCards.length) {
     return (
-      <section className="hand-tray">
+      <section className="hand-tray" aria-label="Your cards">
         <h2>Your cards</h2>
         <p className="helper-text">No visible cards right now. You may be spectating or waiting for your next pile.</p>
       </section>
@@ -123,7 +123,6 @@ export function HandTray(props: {
             onDragStart={() => {
               draggedCardIdRef.current = card.id;
             }}
-            onDragOver={() => undefined}
             onMoveLeft={() => setOrderedCardIds((currentOrder) => moveByOffset(currentOrder, card.id, -1))}
             onMoveRight={() => setOrderedCardIds((currentOrder) => moveByOffset(currentOrder, card.id, 1))}
             onToggle={() => {
