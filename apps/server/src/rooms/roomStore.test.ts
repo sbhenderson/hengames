@@ -27,6 +27,58 @@ describe("roomStore", () => {
     expect(rooms[0]!.hostParticipantId).toBe(result.participant.id);
   });
 
+  test("createRoom assigns a generated adjective-animal identity and avatar when no display name is provided", () => {
+    const result = store.createRoom({});
+
+    expect(result.participant.displayName).toMatch(/^[a-z]+-[a-z]+$/);
+    expect(result.participant.displayName).not.toMatch(/^Anonymous-/);
+    expect(result.participant).toHaveProperty("avatar");
+    expect(result.room.participants[0]).toHaveProperty("avatar");
+  });
+
+  test("updateAvatar changes the participant avatar for the current session", () => {
+    const { room, participant } = store.createRoom({});
+
+    const snapshot = store.updateAvatar({
+      code: room.code,
+      token: participant.token,
+      avatar: { emoji: "🦊", color: "#f97316" }
+    });
+
+    expect(snapshot.participants.find(candidate => candidate.id === participant.id)?.avatar).toEqual({
+      emoji: "🦊",
+      color: "#f97316"
+    });
+  });
+
+  test("createRoom stores six decks as the default lobby option", () => {
+    const result = store.createRoom({ displayName: "Alice" });
+
+    expect(result.room.options.deckCount).toBe(6);
+  });
+
+  test("startGame uses the configured deck count", () => {
+    const { room, participant: p1 } = store.createRoom({ displayName: "P1", options: { deckCount: 7 } });
+    const { participant: p2 } = store.joinRoom({ code: room.code, displayName: "P2" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    store.chooseSeat({ code: room.code, token: p1.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: p2.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+
+    store.setReady({ code: room.code, token: p1.token, ready: true });
+    store.setReady({ code: room.code, token: p2.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+
+    const snapshot = store.startGame({ code: room.code, token: p1.token });
+    const view = snapshot.currentView as HandAndFootPlayerView;
+
+    expect(view.drawCount).toBe(7 * 54 - 4 * 22 - 1);
+  });
+
   test("room code is 6 characters from valid alphabet", () => {
     const result = store.createRoom({ displayName: "Bob" });
     const validChars = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;

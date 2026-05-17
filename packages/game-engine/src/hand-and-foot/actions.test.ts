@@ -11,7 +11,7 @@ function startState() {
 }
 
 describe("hand and foot actions", () => {
-  it("draws two cards and advances to meld step", () => {
+  it("draws two cards and requires a discard", () => {
     const state = startState();
     const next = handAndFootDefinition.applyAction({
       state,
@@ -21,7 +21,7 @@ describe("hand and foot actions", () => {
     });
 
     expect(next.players.p1?.hand).toHaveLength(13);
-    expect(next.turnStep).toBe("may-meld");
+    expect(next.turnStep).toBe("must-discard");
   });
 
   it("rejects acting out of turn", () => {
@@ -58,6 +58,38 @@ describe("hand and foot actions", () => {
 
     expect(next.currentPlayerIndex).toBe(1);
     expect(next.turnStep).toBe("must-draw");
+  });
+
+  it("still allows melding before the required discard after drawing", () => {
+    const state = startState();
+    const p1 = state.players.p1;
+
+    if (!p1) {
+      throw new Error("Expected p1");
+    }
+
+    p1.hand = [{ id: "a1", rank: "A", suit: "clubs", deckIndex: 0 }];
+    state.drawPile.unshift(
+      { id: "a2", rank: "A", suit: "diamonds", deckIndex: 0 },
+      { id: "a3", rank: "A", suit: "hearts", deckIndex: 0 }
+    );
+
+    const drawn = handAndFootDefinition.applyAction({
+      state,
+      playerId: "p1",
+      rules: handAndFootDefinition.defaultRules,
+      action: { type: "draw" }
+    });
+
+    const melded = handAndFootDefinition.applyAction({
+      state: drawn,
+      playerId: "p1",
+      rules: handAndFootDefinition.defaultRules,
+      action: { type: "meld", cardIds: ["a1", "a2", "a3"] }
+    });
+
+    expect(melded.melds[0]).toMatchObject({ rank: "A", isBook: false });
+    expect(melded.turnStep).toBe("must-discard");
   });
 
   it("creates a clean book from seven same-rank natural cards", () => {
@@ -191,6 +223,7 @@ describe("hand and foot actions", () => {
       rules: handAndFootDefinition.defaultRules,
       action: { type: "meld", cardIds: ["k1", "k2", "k3", "k4", "k5"] }
     });
+    withFirstMeld.turnStep = "may-meld";
 
     // Create second meld with 3 naturals
     const withSecondMeld = handAndFootDefinition.applyAction({
@@ -199,6 +232,7 @@ describe("hand and foot actions", () => {
       rules: handAndFootDefinition.defaultRules,
       action: { type: "meld", cardIds: ["n1", "n2", "n3"] }
     });
+    withSecondMeld.turnStep = "may-meld";
 
     const secondMeldId = withSecondMeld.melds[1]?.id;
     if (!secondMeldId) {

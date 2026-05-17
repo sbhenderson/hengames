@@ -50,6 +50,69 @@ button {
   margin: 1rem 0;
 }
 
+.helper-text {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.profile-card,
+.status-card {
+  align-items: center;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.avatar {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 1.5rem;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.avatar.small {
+  font-size: 1rem;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.avatar-picker,
+.seat-occupant,
+.status-grid {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.avatar-choice {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  padding: 0;
+  width: 2.25rem;
+}
+
+.status-grid {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 1rem 0;
+}
+
+.status-card {
+  align-items: flex-start;
+  display: grid;
+}
+
 .room-list,
 .seat-grid {
   display: grid;
@@ -76,8 +139,8 @@ button {
 
 .card-grid {
   display: grid;
-  gap: 0.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 0.35rem;
+  grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
 }
 
 .playing-card {
@@ -86,13 +149,39 @@ button {
   background: #f8fafc;
   color: #0f172a;
   display: grid;
+  font-size: 0.95rem;
   justify-items: center;
-  min-height: 96px;
+  min-height: 68px;
+  padding: 0.4rem;
 }
 
 .playing-card small {
   color: #475569;
   font-size: 0.75rem;
+}
+
+.room-card.compact {
+  font-size: 0.9rem;
+}
+
+.team-books {
+  margin-top: 1rem;
+}
+
+.book-badge {
+  border-radius: 999px;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+}
+
+.clean-book {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.dirty-book {
+  background: #020617;
+  color: #e2e8f0;
 }
 
 @media (max-width: 760px) {
