@@ -42,7 +42,19 @@ describe("appRouter", () => {
       const result = await router.createCaller({}).createRoom({});
 
       expect(result.room.code).toBeTruthy();
-      expect(result.participant.displayName).toMatch(/^Anonymous-/);
+      expect(result.participant.displayName).toMatch(/^[a-z]+-[a-z]+$/);
+      expect(result.participant.displayName).not.toMatch(/^Anonymous-/);
+      expect(result.participant).toHaveProperty("avatar");
+      expect(result.room.options.deckCount).toBe(6);
+    });
+
+    test("creates room with deck count option", async () => {
+      const result = await router.createCaller({}).createRoom({
+        displayName: "Alice",
+        options: { deckCount: 7 }
+      });
+
+      expect(result.room.options.deckCount).toBe(7);
     });
   });
 
@@ -58,6 +70,38 @@ describe("appRouter", () => {
       expect(joined.participant.displayName).toBe("Bob");
       expect(joined.participant.id).not.toBe(created.participant.id);
       expect(joined.participant.token).toBeTruthy();
+    });
+  });
+
+  describe("updateAvatar", () => {
+    test("updates avatar and broadcasts the room", async () => {
+      const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
+
+      const snapshot = await router.createCaller({}).updateAvatar({
+        code: created.room.code,
+        participantToken: created.participant.token,
+        avatar: { emoji: "🦊", color: "#f97316" }
+      });
+
+      expect(snapshot.participants.find(participant => participant.id === created.participant.id)?.avatar).toEqual({
+        emoji: "🦊",
+        color: "#f97316"
+      });
+      expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(created.room.code, roomStore);
+    });
+
+    test("rejects invalid avatar colors before updating the room", async () => {
+      const created = await router.createCaller({}).createRoom({ displayName: "Alice" });
+
+      await expect(
+        router.createCaller({}).updateAvatar({
+          code: created.room.code,
+          participantToken: created.participant.token,
+          avatar: { emoji: "🦊", color: "orange" }
+        })
+      ).rejects.toThrow();
+
+      expect(mockWsHub.broadcastRoom).not.toHaveBeenCalled();
     });
   });
 

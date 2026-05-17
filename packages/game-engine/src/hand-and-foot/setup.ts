@@ -5,7 +5,7 @@ import type { HandAndFootRules, HandAndFootState } from "./types.js";
 export const defaultHandAndFootRules: HandAndFootRules = {
   playerCount: 4,
   teamCount: 2,
-  deckCount: 5,
+  deckCount: 6,
   cardsPerHand: 11,
   cardsPerFoot: 11,
   drawCount: 2,

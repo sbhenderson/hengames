@@ -5,9 +5,15 @@ export type RoomCode = string;
 export type SeatId = "north" | "east" | "south" | "west";
 export type TeamId = "red" | "blue";
 
+export type ParticipantAvatar = {
+  emoji: string;
+  color: string;
+};
+
 export type Participant = {
   id: ParticipantId;
   displayName: string;
+  avatar: ParticipantAvatar;
   token: string;
   connected: boolean;
 };
@@ -31,12 +37,17 @@ export type RoomSummary = {
   createdAt: string;
 };
 
+export type RoomOptions = {
+  deckCount: number;
+};
+
 export type PublicRoomSnapshot<TPlayerView = unknown> = {
   code: RoomCode;
   gameId: GameId;
   status: RoomStatus;
   phase: GamePhase;
   hostParticipantId: ParticipantId;
+  options: RoomOptions;
   currentParticipantId: ParticipantId | null;
   participants: Array<Omit<Participant, "token">>;
   seats: Seat[];

@@ -2,6 +2,12 @@ import type { SeatId } from "@hengames/shared";
 import { trpc, type RoomSnapshot } from "../api/trpc";
 
 const seats: SeatId[] = ["north", "east", "south", "west"];
+const avatarChoices = [
+  { emoji: "🦊", color: "#f97316" },
+  { emoji: "🐧", color: "#38bdf8" },
+  { emoji: "🦉", color: "#a78bfa" },
+  { emoji: "🐢", color: "#22c55e" }
+];
 
 export function Lobby(props: {
   room: RoomSnapshot;
@@ -13,6 +19,7 @@ export function Lobby(props: {
   const resetLobby = trpc.resetLobby.useMutation();
   const kickParticipant = trpc.kickParticipant.useMutation();
   const startGame = trpc.startGame.useMutation();
+  const updateAvatar = trpc.updateAvatar.useMutation();
 
   const participant = props.room.participants.find((candidate) => candidate.id === props.room.currentParticipantId);
   const ownSeat = props.room.seats.find((seat) => seat.participantId === participant?.id);
@@ -24,6 +31,35 @@ export function Lobby(props: {
       <section className="panel">
         <h1>Room {props.room.code}</h1>
         <p>{props.room.status === "waiting" ? "Choose a seat and ready up." : "Game in progress."}</p>
+        {participant ? (
+          <div className="profile-card">
+            <span className="avatar" style={{ background: participant.avatar.color }}>{participant.avatar.emoji}</span>
+            <div>
+              <strong>You are {participant.displayName}</strong>
+              <p className="helper-text">This generated session profile is what other players see.</p>
+              <div className="avatar-picker" aria-label="Choose avatar">
+                {avatarChoices.map((avatar) => (
+                  <button
+                    aria-label={`Use ${avatar.emoji} avatar`}
+                    className="avatar-choice"
+                    key={`${avatar.emoji}-${avatar.color}`}
+                    onClick={() =>
+                      updateAvatar.mutate({
+                        code: props.room.code,
+                        participantToken: props.participantToken,
+                        avatar
+                      })
+                    }
+                    style={{ background: avatar.color }}
+                  >
+                    {avatar.emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+        <p>Game option: {props.room.options.deckCount} decks</p>
         <div className="seat-grid">
           {seats.map((seatId) => {
             const seat = props.room.seats.find((candidate) => candidate.id === seatId);
@@ -32,7 +68,16 @@ export function Lobby(props: {
               <article className="seat-card" key={seatId}>
                 <strong>{seatId}</strong>
                 <span>Team {seat?.teamId}</span>
-                <span>{occupant?.displayName ?? "Open"}</span>
+                <span className="seat-occupant">
+                  {occupant ? (
+                    <>
+                      <span className="avatar small" style={{ background: occupant.avatar.color }}>{occupant.avatar.emoji}</span>
+                      {occupant.displayName}
+                    </>
+                  ) : (
+                    "Open"
+                  )}
+                </span>
                 <span>{seat?.ready ? "Ready" : "Not ready"}</span>
                 {!seat?.participantId ? (
                   <button onClick={() => chooseSeat.mutate({ code: props.room.code, participantToken: props.participantToken, seatId })}>

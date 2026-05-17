@@ -45,7 +45,7 @@ function drawCards(state: HandAndFootState, playerId: string, rules: HandAndFoot
   }
 
   activeCards(player).push(...drawn);
-  state.turnStep = "may-meld";
+  state.turnStep = "must-discard";
   state.lastEvent = `${playerId} drew ${drawn.length} cards.`;
   return state;
 }

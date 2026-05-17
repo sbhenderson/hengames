@@ -4,6 +4,13 @@ import { createRoomStore } from "../rooms/roomStore.js";
 import type { WsHub } from "../wsHub.js";
 
 const seatIdSchema = z.enum(["north", "east", "south", "west"]);
+const roomOptionsSchema = z.object({
+  deckCount: z.number().int().min(2).max(8)
+});
+const avatarSchema = z.object({
+  emoji: z.string().min(1),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/)
+});
 
 const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("draw") }),
@@ -32,7 +39,9 @@ export function createAppRouter(input: {
     createRoom: publicProcedure
       .input(
         z.object({
-          displayName: z.string().optional()
+          displayName: z.string().optional(),
+          avatar: avatarSchema.optional(),
+          options: roomOptionsSchema.partial().optional()
         })
       )
       .mutation(({ input }) => {
@@ -43,11 +52,30 @@ export function createAppRouter(input: {
       .input(
         z.object({
           code: z.string(),
-          displayName: z.string().optional()
+          displayName: z.string().optional(),
+          avatar: avatarSchema.optional()
         })
       )
       .mutation(({ input }) => {
         return roomStore.joinRoom(input);
+      }),
+
+    updateAvatar: publicProcedure
+      .input(
+        z.object({
+          code: z.string(),
+          participantToken: z.string(),
+          avatar: avatarSchema
+        })
+      )
+      .mutation(({ input }) => {
+        const snapshot = roomStore.updateAvatar({
+          code: input.code,
+          token: input.participantToken,
+          avatar: input.avatar
+        });
+        wsHub.broadcastRoom(input.code, roomStore);
+        return snapshot;
       }),
 
     getRoom: publicProcedure

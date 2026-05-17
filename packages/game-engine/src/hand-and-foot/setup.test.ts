@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { handAndFootDefinition } from "./index.js";
 
 describe("hand and foot setup", () => {
+  it("uses six decks by default", () => {
+    expect(handAndFootDefinition.defaultRules.deckCount).toBe(6);
+  });
+
   it("deals eleven hand cards and eleven foot cards to each player", () => {
     const state = handAndFootDefinition.createInitialState({
       seed: "test-seed",
