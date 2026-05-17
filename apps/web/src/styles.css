@@ -67,3 +67,36 @@ button {
   background: transparent;
   color: #bae6fd;
 }
+
+.table-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+}
+
+.card-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+}
+
+.playing-card {
+  align-items: center;
+  aspect-ratio: 2.5 / 3.5;
+  background: #f8fafc;
+  color: #0f172a;
+  display: grid;
+  justify-items: center;
+  min-height: 96px;
+}
+
+.playing-card small {
+  color: #475569;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 760px) {
+  .table-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import type { PublicRoomSnapshot } from "@hengames/shared";
 import { trpc, type RoomSnapshot } from "./api/trpc";
 import { useRoomSocket } from "./api/useRoomSocket";
+import { GameTable } from "./components/GameTable";
 import { HomePage } from "./components/HomePage";
 import { Lobby } from "./components/Lobby";
 
@@ -19,6 +20,11 @@ export function App() {
 
   useRoomSocket({ code: roomCode, participantToken, onSnapshot: handleSnapshot });
 
+  const leaveRoom = () => {
+    setRoomCode(null);
+    setParticipantToken(undefined);
+    setSocketSnapshot(null);
+  };
   const room = socketSnapshot ?? roomQuery.data ?? null;
 
   if (!roomCode || !participantToken) {
@@ -37,15 +43,15 @@ export function App() {
     return <main className="page">Loading room...</main>;
   }
 
+  if (room.status === "playing") {
+    return <GameTable room={room} participantToken={participantToken} onBack={leaveRoom} />;
+  }
+
   return (
     <Lobby
       room={room}
       participantToken={participantToken}
-      onBack={() => {
-        setRoomCode(null);
-        setParticipantToken(undefined);
-        setSocketSnapshot(null);
-      }}
+      onBack={leaveRoom}
     />
   );
 }
