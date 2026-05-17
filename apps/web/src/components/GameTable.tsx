@@ -1,27 +1,12 @@
-import type { Card } from "@hengames/shared";
+import { useState } from "react";
+import type { ParticipantAvatar } from "@hengames/shared";
 import { trpc, type RoomSnapshot } from "../api/trpc";
-import { AvatarPicker } from "./AvatarPicker";
-
-type HandAndFootTableView = {
-  round: number;
-  currentPlayerId: string;
-  turnStep: "must-draw" | "may-meld" | "must-discard";
-  players: Record<string, { hand?: Card[]; handCount?: number; footCount?: number; teamId: "red" | "blue"; activePile: "hand" | "foot" }>;
-  topDiscard: Card | null;
-  discardCount: number;
-  drawCount: number;
-  melds: Array<{ id: string; rank: string; teamId: "red" | "blue"; cards: Card[]; isBook: boolean; isClean: boolean }>;
-  teamScores: Record<"red" | "blue", number>;
-  lastEvent: string;
-};
-
-const suitEmoji: Record<Card["suit"], string> = {
-  clubs: "♣️",
-  diamonds: "♦️",
-  hearts: "♥️",
-  spades: "♠️",
-  joker: "🤡"
-};
+import { GameHud } from "./game-table/GameHud";
+import { HandTray } from "./game-table/HandTray";
+import { PlayerStrip, type PlayerStripParticipant } from "./game-table/PlayerStrip";
+import { TableSurface } from "./game-table/TableSurface";
+import { turnActionPrompt } from "./game-table/gameTableHelpers";
+import type { HandAndFootTableView } from "./game-table/types";
 
 export function GameTable(props: {
   room: RoomSnapshot;
@@ -30,130 +15,99 @@ export function GameTable(props: {
 }) {
   const action = trpc.gameAction.useMutation();
   const updateAvatar = trpc.updateAvatar.useMutation();
+  const [actionError, setActionError] = useState<string | null>(null);
   const view = props.room.currentView as HandAndFootTableView | null;
 
   const currentParticipantId = props.room.currentParticipantId;
-  const ownPlayer = currentParticipantId ? view?.players[currentParticipantId] : undefined;
+  const ownPlayer = currentParticipantId && view ? view.players[currentParticipantId] : undefined;
+  const visibleCards = ownPlayer?.activePile === "foot" ? ownPlayer.foot : ownPlayer?.hand;
   const participant = props.room.participants.find((candidate) => candidate.id === currentParticipantId);
+  const participants = props.room.participants.reduce<Record<string, PlayerStripParticipant>>((result, candidate) => {
+    result[candidate.id] = {
+      displayName: candidate.displayName,
+      avatar: candidate.avatar
+    };
+    return result;
+  }, {});
+
+  if (!view) {
+    return (
+      <main className="page game-page">
+        <button className="link-button" onClick={props.onBack} type="button">Back to rooms</button>
+        <section className="panel">
+          <p>Waiting for game state...</p>
+        </section>
+      </main>
+    );
+  }
+
+  const currentPlayerName = displayName(view.currentPlayerId, props.room);
+  const isOwnTurn = view.currentPlayerId === currentParticipantId;
+
+  type GameActionInput = Parameters<typeof action.mutate>[0];
+  const runAction = (gameAction: GameActionInput["action"]) => {
+    setActionError(null);
+    action.mutate(
+      { code: props.room.code, participantToken: props.participantToken, action: gameAction },
+      {
+        onError(error) {
+          setActionError(error.message);
+        },
+        onSuccess() {
+          setActionError(null);
+        }
+      }
+    );
+  };
+
+  const updateParticipantAvatar = (avatar: ParticipantAvatar) => {
+    updateAvatar.mutate({
+      code: props.room.code,
+      participantToken: props.participantToken,
+      avatar
+    });
+  };
 
   return (
-    <main className="page">
-      <button className="link-button" onClick={props.onBack}>Back to rooms</button>
-      <section className="panel">
-        <h1>Room {props.room.code}</h1>
-        {view ? (
-          <>
-            <p>{view.lastEvent}</p>
-            <div className="status-grid">
-              <article className="status-card">
-                <strong>Round {view.round}</strong>
-                <span>{turnStepLabel(view.turnStep)}</span>
-              </article>
-              <article className="status-card">
-                <strong>Current turn</strong>
-                <span>{displayName(view.currentPlayerId, props.room)}</span>
-              </article>
-              <article className="status-card">
-                <strong>Scores</strong>
-                <span>Red {view.teamScores.red} | Blue {view.teamScores.blue}</span>
-              </article>
-              <article className="status-card">
-                <strong>Piles</strong>
-                <span>Draw {view.drawCount} | Discard {view.discardCount}</span>
-              </article>
-            </div>
-            {participant ? (
-              <div className="profile-card">
-                <span className="avatar" style={{ background: participant.avatar.color }}>{participant.avatar.emoji}</span>
-                <div>
-                  <strong>You are {participant.displayName}</strong>
-                  <p className="helper-text">
-                    Team {ownPlayer?.teamId}; currently playing from your {ownPlayer?.activePile ?? "hand"}.
-                  </p>
-                  <AvatarPicker
-                    disabled={updateAvatar.isPending}
-                    value={participant.avatar}
-                    onChange={(avatar) =>
-                      updateAvatar.mutate({
-                        code: props.room.code,
-                        participantToken: props.participantToken,
-                        avatar
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            ) : null}
-            <div className="table-grid">
-              <article className="panel">
-                <h2>Your cards</h2>
-                {ownPlayer?.hand?.length ? (
-                  <div className="card-grid">
-                    {ownPlayer.hand.map((card) => (
-                      <button
-                        className="playing-card"
-                        key={card.id}
-                        onClick={() =>
-                          view.turnStep === "must-discard"
-                            ? action.mutate({ code: props.room.code, participantToken: props.participantToken, action: { type: "discard", cardId: card.id } })
-                            : undefined
-                        }
-                      >
-                        {formatCardRank(card)}
-                        <small>{suitEmoji[card.suit]}</small>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p>You are spectating public state.</p>
-                )}
-              </article>
-              <article className="panel">
-                <h2>Actions</h2>
-                <button
-                  disabled={view.turnStep !== "must-draw"}
-                  onClick={() => action.mutate({ code: props.room.code, participantToken: props.participantToken, action: { type: "draw" } })}
-                >
-                  Draw 2
-                </button>
-                <p>Top discard: {view.topDiscard ? formatCard(view.topDiscard) : "None"}</p>
-                <p>Draw pile: {view.drawCount}</p>
-                <div className="room-list">
-                  {Object.entries(view.players).map(([playerId, player]) => (
-                    <article className="room-card compact" key={playerId}>
-                      <strong>{displayName(playerId, props.room)}</strong>
-                      <span>Team {player.teamId}</span>
-                      <span>{player.activePile}: {player.hand?.length ?? player.handCount ?? 0} cards</span>
-                      {player.footCount !== undefined ? <span>Foot: {player.footCount} cards</span> : null}
-                    </article>
-                  ))}
-                </div>
-              </article>
-            </div>
-            <section className="panel">
-              <h2>Table books</h2>
-              {(["red", "blue"] as const).map((teamId) => (
-                <div className="team-books" key={teamId}>
-                  <h3>Team {teamId}</h3>
-                  <div className="room-list">
-                    {teamMelds(view, teamId).map((meld) => (
-                      <article className="room-card" key={meld.id}>
-                        <strong>{meld.rank}</strong>
-                        <span>{meld.cards.length} cards</span>
-                        <span className={bookClassName(meld)}>
-                          {bookLabel(meld)}
-                        </span>
-                      </article>
-                    ))}
-                    {teamMelds(view, teamId).length === 0 ? <p>No melds or books yet.</p> : null}
-                  </div>
-                </div>
-              ))}
-            </section>
-          </>
-        ) : (
-          <p>Waiting for game state...</p>
-        )}
+    <main className="page game-page">
+      <GameHud
+        actionPrompt={turnActionPrompt({ isOwnTurn, currentPlayerName, turnStep: view.turnStep })}
+        activePile={ownPlayer?.activePile}
+        avatarDisabled={updateAvatar.isPending}
+        currentPlayerName={currentPlayerName}
+        isOwnTurn={isOwnTurn}
+        onAvatarChange={updateParticipantAvatar}
+        onBack={props.onBack}
+        participant={participant}
+        playerTeam={ownPlayer?.teamId}
+        roomCode={props.room.code}
+        round={view.round}
+        teamScores={view.teamScores}
+        turnStep={view.turnStep}
+      />
+      <section className="game-table-shell">
+        <TableSurface
+          discardCount={view.discardCount}
+          drawCount={view.drawCount}
+          lastEvent={view.lastEvent}
+          melds={view.melds}
+          topDiscard={view.topDiscard}
+        />
+        <PlayerStrip currentPlayerId={view.currentPlayerId} participants={participants} players={view.players} />
+        <HandTray
+          actionError={actionError}
+          actionPending={action.isPending}
+          activePile={ownPlayer?.activePile}
+          cards={visibleCards}
+          isOwnTurn={isOwnTurn}
+          melds={view.melds}
+          onAddToMeld={(cardIds, targetMeldId) => runAction({ type: "meld", cardIds, targetMeldId })}
+          onCreateMeld={(cardIds) => runAction({ type: "meld", cardIds })}
+          onDiscard={(cardId) => runAction({ type: "discard", cardId })}
+          onDraw={() => runAction({ type: "draw" })}
+          teamId={ownPlayer?.teamId}
+          turnStep={view.turnStep}
+        />
       </section>
     </main>
   );
@@ -161,39 +115,4 @@ export function GameTable(props: {
 
 function displayName(participantId: string, room: RoomSnapshot): string {
   return room.participants.find((participant) => participant.id === participantId)?.displayName ?? participantId;
-}
-
-function turnStepLabel(turnStep: HandAndFootTableView["turnStep"]): string {
-  if (turnStep === "must-draw") {
-    return "Draw 2 to start the turn";
-  }
-  if (turnStep === "must-discard") {
-    return "Discard one card";
-  }
-  return "Meld cards";
-}
-
-function formatCardRank(card: Card): string {
-  return card.rank === "JOKER" ? "🤡" : card.rank;
-}
-
-function formatCard(card: Card): string {
-  return card.rank === "JOKER" ? "🤡 Joker" : `${card.rank} ${suitEmoji[card.suit]}`;
-}
-
-function teamMelds(view: HandAndFootTableView, teamId: "red" | "blue") {
-  return view.melds.filter((meld) => meld.teamId === teamId);
-}
-
-function bookLabel(meld: HandAndFootTableView["melds"][number]): string {
-  const hasWilds = meld.cards.some((card) => card.rank === "2" || card.rank === "JOKER");
-  if (meld.isBook) {
-    return hasWilds ? "Black dirty book" : "Red clean book";
-  }
-  return hasWilds ? "Building black book" : "Building red book";
-}
-
-function bookClassName(meld: HandAndFootTableView["melds"][number]): string {
-  const hasWilds = meld.cards.some((card) => card.rank === "2" || card.rank === "JOKER");
-  return hasWilds ? "book-badge dirty-book" : "book-badge clean-book";
 }
