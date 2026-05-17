@@ -89,7 +89,7 @@ export function HandTray(props: {
           </button>
         ))}
         <button
-          disabled={!analysis.canDiscard || props.actionPending}
+          disabled={!props.isOwnTurn || !analysis.canDiscard || props.actionPending}
           onClick={() => {
             const cardId = selectedIds[0];
             if (cardId) {
