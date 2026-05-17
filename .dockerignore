@@ -1,0 +1,12 @@
+.git
+.github
+.worktrees
+node_modules
+npm-debug.log*
+Dockerfile
+.dockerignore
+apps/*/dist
+packages/*/dist
+coverage
+.env
+.env.*

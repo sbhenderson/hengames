@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeEach, vi, afterEach } from "vitest";
 import http from "node:http";
 import { WebSocket } from "ws";
-import { createWsHub } from "./wsHub";
-import { createRoomStore } from "./rooms/roomStore";
+import { createWsHub } from "./wsHub.js";
+import { createRoomStore } from "./rooms/roomStore.js";
 
 describe("wsHub", () => {
   let server: http.Server;

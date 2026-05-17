@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GameRuleError } from "@hengames/shared";
-import { handAndFootDefinition } from "./index";
+import { handAndFootDefinition } from "./index.js";
 
 function startState() {
   return handAndFootDefinition.createInitialState({

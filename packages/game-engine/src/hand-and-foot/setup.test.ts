@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { handAndFootDefinition } from "./index";
+import { handAndFootDefinition } from "./index.js";
 
 describe("hand and foot setup", () => {
   it("deals eleven hand cards and eleven foot cards to each player", () => {

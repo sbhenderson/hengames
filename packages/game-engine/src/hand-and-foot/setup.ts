@@ -1,6 +1,6 @@
 import { GameRuleError } from "@hengames/shared";
-import { createDecks, shuffle } from "./cards";
-import type { HandAndFootRules, HandAndFootState } from "./types";
+import { createDecks, shuffle } from "./cards.js";
+import type { HandAndFootRules, HandAndFootState } from "./types.js";
 
 export const defaultHandAndFootRules: HandAndFootRules = {
   playerCount: 4,

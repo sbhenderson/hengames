@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import { createRoomStore } from "../rooms/roomStore";
-import { createAppRouter } from "./appRouter";
+import { createRoomStore } from "../rooms/roomStore.js";
+import { createAppRouter } from "./appRouter.js";
 
 describe("appRouter", () => {
   let roomStore: ReturnType<typeof createRoomStore>;

@@ -1,8 +1,8 @@
 import type { GameDefinition } from "@hengames/shared";
-import { applyHandAndFootAction } from "./actions";
-import { createInitialHandAndFootState, defaultHandAndFootRules } from "./setup";
-import { getHandAndFootPlayerView } from "./views";
-import type { HandAndFootAction, HandAndFootPlayerView, HandAndFootRules, HandAndFootState } from "./types";
+import { applyHandAndFootAction } from "./actions.js";
+import { createInitialHandAndFootState, defaultHandAndFootRules } from "./setup.js";
+import { getHandAndFootPlayerView } from "./views.js";
+import type { HandAndFootAction, HandAndFootPlayerView, HandAndFootRules, HandAndFootState } from "./types.js";
 
 export const handAndFootDefinition: GameDefinition<
   HandAndFootRules,
@@ -18,8 +18,8 @@ export const handAndFootDefinition: GameDefinition<
   applyAction: applyHandAndFootAction
 };
 
-export * from "./actions";
-export * from "./types";
-export * from "./cards";
-export * from "./setup";
-export * from "./views";
+export * from "./actions.js";
+export * from "./types.js";
+export * from "./cards.js";
+export * from "./setup.js";
+export * from "./views.js";

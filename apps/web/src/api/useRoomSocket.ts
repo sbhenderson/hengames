@@ -18,7 +18,8 @@ export function useRoomSocket(input: {
       params.set("participantToken", participantToken);
     }
 
-    const socket = new WebSocket(`ws://localhost:3000/ws?${params.toString()}`);
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${window.location.host}/ws?${params.toString()}`);
     socket.addEventListener("message", (event) => {
       const message = JSON.parse(event.data) as { type: "room-snapshot"; snapshot: PublicRoomSnapshot };
       if (message.type === "room-snapshot") {

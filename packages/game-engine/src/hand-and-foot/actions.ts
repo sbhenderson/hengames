@@ -1,7 +1,7 @@
 import { GameRuleError, type Card, type CardId } from "@hengames/shared";
-import { isWildRank } from "./cards";
-import { cardPoints, classifyMeld, scoreRound } from "./scoring";
-import type { HandAndFootAction, HandAndFootRules, HandAndFootState } from "./types";
+import { isWildRank } from "./cards.js";
+import { cardPoints, classifyMeld, scoreRound } from "./scoring.js";
+import type { HandAndFootAction, HandAndFootRules, HandAndFootState } from "./types.js";
 
 export function applyHandAndFootAction(input: {
   state: HandAndFootState;

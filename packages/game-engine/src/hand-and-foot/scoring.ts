@@ -1,6 +1,6 @@
 import type { Card, Rank } from "@hengames/shared";
-import { isWildRank } from "./cards";
-import type { HandAndFootRules, HandAndFootState, Meld } from "./types";
+import { isWildRank } from "./cards.js";
+import type { HandAndFootRules, HandAndFootState, Meld } from "./types.js";
 
 export function cardPoints(card: Pick<Card, "rank">, rules: HandAndFootRules): number {
   return rules.cardPoints[card.rank];

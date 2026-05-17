@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
-import { createRoomStore } from "../rooms/roomStore";
-import type { WsHub } from "../wsHub";
+import { router, publicProcedure } from "../trpc.js";
+import { createRoomStore } from "../rooms/roomStore.js";
+import type { WsHub } from "../wsHub.js";
 
 const seatIdSchema = z.enum(["north", "east", "south", "west"]);
 

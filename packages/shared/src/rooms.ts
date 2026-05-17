@@ -1,4 +1,4 @@
-import type { GameId, GamePhase } from "./game";
+import type { GameId, GamePhase } from "./game.js";
 
 export type ParticipantId = string;
 export type RoomCode = string;

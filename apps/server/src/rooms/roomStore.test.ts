@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "vitest";
-import { createRoomStore } from "./roomStore";
+import { createRoomStore } from "./roomStore.js";
 import type { HandAndFootPlayerView } from "@hengames/game-engine";
 
 describe("roomStore", () => {

@@ -1,6 +1,6 @@
 import { Server } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
-import { createRoomStore } from "./rooms/roomStore";
+import { createRoomStore } from "./rooms/roomStore.js";
 
 type Client = {
   socket: WebSocket;

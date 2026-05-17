@@ -1,4 +1,4 @@
-import type { HandAndFootPlayerView, HandAndFootRules, HandAndFootState } from "./types";
+import type { HandAndFootPlayerView, HandAndFootRules, HandAndFootState } from "./types.js";
 
 export function getHandAndFootPlayerView(input: {
   state: HandAndFootState;

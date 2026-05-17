@@ -28,6 +28,29 @@ npm run test
 npm run build
 ```
 
+Build and run the production container locally:
+
+```powershell
+docker build -t hengames .
+docker run --rm -p 3000:3000 hengames
+```
+
+The container serves the React app, tRPC API, WebSocket endpoint, and health check from `http://localhost:3000`.
+
+## Deployment
+
+The `CI and Docker` GitHub Actions workflow verifies typecheck, tests, and build on pull requests and pushes. On pushes to `main`, tags matching `v*.*.*`, or manual dispatches, it also publishes a Docker image to GitHub Container Registry:
+
+```text
+ghcr.io/<owner>/<repo>
+```
+
+Run the published image with:
+
+```powershell
+docker run --rm -p 3000:3000 ghcr.io/<owner>/<repo>:main
+```
+
 ## Current scope
 
 - Anonymous participants with optional display names.

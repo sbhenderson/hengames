@@ -1,1 +1,1 @@
-export * from "./hand-and-foot";
+export * from "./hand-and-foot/index.js";
