@@ -39,11 +39,13 @@ export function createWsHub(server: Server) {
   });
 
   function broadcastRoom(code: string, roomStore: ReturnType<typeof createRoomStore>) {
+    const normalizedCode = code.toUpperCase();
+
     for (const client of clients) {
-      if (client.code === code && client.socket.readyState === WebSocket.OPEN) {
+      if (client.code === normalizedCode && client.socket.readyState === WebSocket.OPEN) {
         try {
           const snapshot = roomStore.getSnapshot({
-            code,
+            code: normalizedCode,
             token: client.participantToken
           });
 
@@ -54,7 +56,7 @@ export function createWsHub(server: Server) {
 
           client.socket.send(message);
         } catch (error) {
-          console.error(`Failed to broadcast to client in room ${code}:`, error instanceof Error ? error.message : error);
+          console.error(`Failed to broadcast to client in room ${normalizedCode}:`, error instanceof Error ? error.message : error);
         }
       }
     }

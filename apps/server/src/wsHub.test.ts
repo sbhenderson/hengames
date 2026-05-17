@@ -86,6 +86,24 @@ describe("wsHub", () => {
     ws.close();
   });
 
+  test("broadcastRoom normalizes room code before matching clients", async () => {
+    const { room } = roomStore.createRoom({ displayName: "Alice" });
+    const ws = new WebSocket(`ws://localhost:${port}/ws?code=${room.code}`);
+    await new Promise<void>((resolve) => ws.on("open", () => resolve()));
+
+    const messages: any[] = [];
+    ws.on("message", (data) => messages.push(JSON.parse(data.toString())));
+
+    wsHub.broadcastRoom(room.code.toLowerCase(), roomStore);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    ws.close();
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]!.type).toBe("room-snapshot");
+    expect(messages[0]!.snapshot.code).toBe(room.code);
+  });
+
   test("accepts participantToken from query string", async () => {
     const { room, participant } = roomStore.createRoom({ displayName: "Alice" });
     
@@ -239,6 +257,7 @@ describe("wsHub", () => {
 
   test("broadcast continues to valid clients even if one client has invalid token", async () => {
     const { room, participant } = roomStore.createRoom({ displayName: "Alice" });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     
     // Connect client with invalid token
     const wsInvalid = new WebSocket(
@@ -263,8 +282,13 @@ describe("wsHub", () => {
     // Valid client should still receive the broadcast
     expect(validMessages).toHaveLength(1);
     expect(validMessages[0]!.type).toBe("room-snapshot");
+    expect(consoleError).toHaveBeenCalledWith(
+      `Failed to broadcast to client in room ${room.code}:`,
+      "Invalid or expired token"
+    );
 
     wsInvalid.close();
     wsValid.close();
+    consoleError.mockRestore();
   });
 });
