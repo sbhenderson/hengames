@@ -21,7 +21,7 @@ export function createHttpServer(options: ServerOptions = {}) {
   const wsHub = createWsHub(server);
   const appRouter = createAppRouter({ roomStore, wsHub });
   const cleanupInterval = setInterval(() => {
-    roomStore.closeInactiveRooms();
+    roomStore.closeInactiveRooms({ activeCodes: wsHub.getActiveRoomCodes() });
   }, 60_000);
   cleanupInterval.unref?.();
   server.on("close", () => {

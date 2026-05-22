@@ -11,7 +11,7 @@
     "dev": "concurrently \"npm run dev -w @hengames/server\" \"npm run dev -w @hengames/web\"",
     "build": "npm run build -w @hengames/shared && npm run build -w @hengames/game-engine && npm run build -w @hengames/server && npm run build -w @hengames/web",
     "typecheck": "npm run typecheck -w @hengames/shared && npm run typecheck -w @hengames/game-engine && npm run typecheck -w @hengames/server && npm run typecheck -w @hengames/web",
-    "test": "npm run test -w @hengames/game-engine && npm run test -w @hengames/server",
+    "test": "npm run test -w @hengames/game-engine && npm run test -w @hengames/server && npm run test -w @hengames/web",
     "lint": "npm run lint -ws --if-present"
   },
   "devDependencies": {

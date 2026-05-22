@@ -57,7 +57,9 @@ export function createAppRouter(input: {
         })
       )
       .mutation(({ input }) => {
-        return roomStore.joinRoom(input);
+        const joined = roomStore.joinRoom(input);
+        wsHub.broadcastRoom(input.code, roomStore);
+        return joined;
       }),
 
     updateAvatar: publicProcedure

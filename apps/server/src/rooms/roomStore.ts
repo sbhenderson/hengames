@@ -450,6 +450,7 @@ export function createRoomStore() {
     });
 
     room.gameState = nextState;
+    room.status = nextState.phase === "game-over" ? "finished" : "playing";
     touchRoom(room);
 
     return createSnapshot(room, participant.id);
@@ -471,12 +472,17 @@ export function createRoomStore() {
   function closeInactiveRooms(input: {
     inactiveMs?: number;
     now?: number;
+    activeCodes?: Iterable<RoomCode>;
   } = {}): RoomCode[] {
     const inactiveMs = input.inactiveMs ?? ROOM_INACTIVITY_LIMIT_MS;
     const now = input.now ?? Date.now();
+    const activeCodes = new Set(Array.from(input.activeCodes ?? [], code => code.toUpperCase()));
     const closedCodes: RoomCode[] = [];
 
     for (const [code, room] of rooms.entries()) {
+      if (activeCodes.has(code)) {
+        continue;
+      }
       if (now - room.lastActivityAt >= inactiveMs) {
         rooms.delete(code);
         closedCodes.push(code);

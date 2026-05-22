@@ -29,7 +29,11 @@ export function loadParticipantToken(): string | undefined {
 export function loadSessionProfile(): SessionProfile {
   const existing = window.localStorage.getItem(sessionProfileKey);
   if (existing) {
-    return JSON.parse(existing) as SessionProfile;
+    try {
+      return JSON.parse(existing) as SessionProfile;
+    } catch {
+      window.localStorage.removeItem(sessionProfileKey);
+    }
   }
 
   const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);

@@ -12,13 +12,21 @@ export function App() {
   const [socketSnapshot, setSocketSnapshot] = useState<RoomSnapshot | null>(null);
   const roomQuery = trpc.getRoom.useQuery(
     { code: roomCode ?? "", participantToken },
-    { enabled: Boolean(roomCode) }
+    {
+      enabled: Boolean(roomCode),
+      refetchInterval: roomCode ? 5000 : false
+    }
   );
   const handleSnapshot = useCallback((snapshot: PublicRoomSnapshot) => {
     setSocketSnapshot(snapshot);
   }, []);
 
-  useRoomSocket({ code: roomCode, participantToken, onSnapshot: handleSnapshot });
+  useRoomSocket({
+    code: roomCode,
+    participantToken,
+    onSnapshot: handleSnapshot,
+    onDisconnect: () => setSocketSnapshot(null)
+  });
 
   const leaveRoom = () => {
     setRoomCode(null);

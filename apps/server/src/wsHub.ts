@@ -62,8 +62,19 @@ export function createWsHub(server: Server) {
     }
   }
 
+  function getActiveRoomCodes(): Set<string> {
+    const codes = new Set<string>();
+    for (const client of clients) {
+      if (client.socket.readyState === WebSocket.OPEN) {
+        codes.add(client.code);
+      }
+    }
+    return codes;
+  }
+
   return {
-    broadcastRoom
+    broadcastRoom,
+    getActiveRoomCodes
   };
 }
 

@@ -49,7 +49,7 @@ npm run build -w @hengames/web
   - room-store internals use `token`
   - `getRoom` can read token from tRPC context (`Authorization: Bearer ...`) when not passed explicitly.
 - Normalize room codes to uppercase before matching/lookup/broadcast behavior.
-- In `createAppRouter()`, most mutations that update an existing room snapshot call `wsHub.broadcastRoom(code, roomStore)` after successful state changes; `createRoom` and `joinRoom` are exceptions and do not broadcast.
+- In `createAppRouter()`, mutations that update existing room snapshots call `wsHub.broadcastRoom(code, roomStore)` after successful state changes; `createRoom` is the only exception.
 - Use `GameRuleError` for rule-validation failures in game engine actions.
 - Vitest tests are colocated with source files (`*.test.ts`). Server router tests use `router.createCaller(...)` rather than HTTP-level integration for most behavior checks.
 - The root `test` script currently runs `@hengames/game-engine` and `@hengames/server` suites; web tests are not part of the root test script unless explicitly wired.
