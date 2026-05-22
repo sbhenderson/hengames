@@ -1,7 +1,13 @@
 # Todo items
 
-1. [] Users should be able to view historical notifications in a special menu somewhere.
-2. [] This doesn't seem like an actual game. It feels more like a simulation of a game placed onto a simple UI. Let's spruce this up by reordering the game page so that it feels more like a game especially thinking about playing this on their phone i.e. vertical orientation smaller screens. Use your best understanding of what browser based games look like to help here. Your cards should feel like yours - you should be able should be able to drag around their cards for ordering. Users should also be able to select multiple cards after draw for purposes of creating books. At the top should be information about the game - which round, whose turn, if it's yours, what action do you need to, I should be able to view the other team's books and how many cards in their hands. We should highlight subtly which cards can form a book or can be a part of an existing book. Etc.
+1. [] The landing page needs an improvement. We don't want to make this complex, but the area for setting your user profile information should be at the top where you have two small pencil and recycle icons next to the current name to either specify a name or to create a new automatic one. Below, there should be the active rooms as cards (already done), and then below that, we should have a card to create the room.
+2. [] There's been a regression with the websocket or something. It now takes far more time for everyone to be notified together about someone sitting at the table. It's like there's conflicting state or the websocket can't override the full refresh from tRPC. I don't get it, but it's not a great experience right now.
+3. [] Increase the density of the player cards in the center. It should be as simple as the icon and what team they're on.
+4. [] Users should be able to view historical notifications in a special menu somewhere.
+
+## Maybe completed
+
+1. [] This doesn't seem like an actual game. It feels more like a simulation of a game placed onto a simple UI. Let's spruce this up by reordering the game page so that it feels more like a game especially thinking about playing this on their phone i.e. vertical orientation smaller screens. Use your best understanding of what browser based games look like to help here. Your cards should feel like yours - you should be able should be able to drag around their cards for ordering. Users should also be able to select multiple cards after draw for purposes of creating books. At the top should be information about the game - which round, whose turn, if it's yours, what action do you need to, I should be able to view the other team's books and how many cards in their hands. We should highlight subtly which cards can form a book or can be a part of an existing book. Etc.
 
 ## Completed
 
