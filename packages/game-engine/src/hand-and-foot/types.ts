@@ -46,6 +46,7 @@ export type HandAndFootState = {
   teamScores: Record<"red" | "blue", number>;
   roundScores: Array<Record<"red" | "blue", number>>;
   lastEvent: string;
+  lastEventSeq: number;
 };
 
 export type HandAndFootAction =
@@ -76,4 +77,5 @@ export type HandAndFootPlayerView = {
   teamScores: Record<"red" | "blue", number>;
   roundScores: Array<Record<"red" | "blue", number>>;
   lastEvent: string;
+  lastEventSeq: number;
 };

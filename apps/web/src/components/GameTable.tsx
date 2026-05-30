@@ -5,12 +5,14 @@ import { GameHud } from "./game-table/GameHud";
 import { HandTray } from "./game-table/HandTray";
 import { PlayerStrip, type PlayerStripParticipant } from "./game-table/PlayerStrip";
 import { TableSurface } from "./game-table/TableSurface";
+import type { GameNotification } from "./game-table/NotificationsMenu";
 import { turnActionPrompt } from "./game-table/gameTableHelpers";
 import type { HandAndFootTableView } from "./game-table/types";
 
 export function GameTable(props: {
   room: RoomSnapshot;
   participantToken: string;
+  notifications: GameNotification[];
   onBack(): void;
 }) {
   const action = trpc.gameAction.useMutation();
@@ -98,6 +100,7 @@ export function GameTable(props: {
         avatarError={avatarError}
         currentPlayerName={currentPlayerName}
         isOwnTurn={isOwnTurn}
+        notifications={props.notifications}
         onAvatarChange={updateParticipantAvatar}
         onBack={props.onBack}
         participant={participant}

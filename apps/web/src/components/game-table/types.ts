@@ -15,6 +15,7 @@ export type HandAndFootTableView = {
   teamScores: Record<TeamId, number>;
   roundScores: Array<Record<TeamId, number>>;
   lastEvent: string;
+  lastEventSeq: number;
 };
 
 export type PublicPlayerState = {

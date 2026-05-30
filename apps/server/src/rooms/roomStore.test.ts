@@ -83,6 +83,29 @@ describe("roomStore", () => {
     expect(view.drawCount).toBe(7 * 54 - 4 * 22 - 1);
   });
 
+  test("startGame assigns a fresh gameInstanceId absent during the lobby", () => {
+    const { room, participant: p1 } = store.createRoom({ displayName: "P1" });
+    const { participant: p2 } = store.joinRoom({ code: room.code, displayName: "P2" });
+    const { participant: p3 } = store.joinRoom({ code: room.code, displayName: "P3" });
+    const { participant: p4 } = store.joinRoom({ code: room.code, displayName: "P4" });
+
+    expect(store.getSnapshot({ code: room.code }).gameInstanceId).toBeNull();
+
+    store.chooseSeat({ code: room.code, token: p1.token, seatId: "north" });
+    store.chooseSeat({ code: room.code, token: p2.token, seatId: "east" });
+    store.chooseSeat({ code: room.code, token: p3.token, seatId: "south" });
+    store.chooseSeat({ code: room.code, token: p4.token, seatId: "west" });
+    store.setReady({ code: room.code, token: p1.token, ready: true });
+    store.setReady({ code: room.code, token: p2.token, ready: true });
+    store.setReady({ code: room.code, token: p3.token, ready: true });
+    store.setReady({ code: room.code, token: p4.token, ready: true });
+
+    const snapshot = store.startGame({ code: room.code, token: p1.token });
+
+    expect(typeof snapshot.gameInstanceId).toBe("string");
+    expect(snapshot.gameInstanceId).toBeTruthy();
+  });
+
   test("room code is 6 characters from valid alphabet", () => {
     const result = store.createRoom({ displayName: "Bob" });
     const validChars = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;

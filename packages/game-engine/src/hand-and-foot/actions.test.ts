@@ -60,6 +60,33 @@ describe("hand and foot actions", () => {
     expect(next.turnStep).toBe("must-draw");
   });
 
+  it("advances lastEventSeq on every state-changing action", () => {
+    const state = startState();
+    expect(state.lastEventSeq).toBe(0);
+
+    const drawn = handAndFootDefinition.applyAction({
+      state,
+      playerId: "p1",
+      rules: handAndFootDefinition.defaultRules,
+      action: { type: "draw" }
+    });
+    expect(drawn.lastEventSeq).toBe(1);
+
+    const cardId = drawn.players.p1?.hand[0]?.id;
+    if (!cardId) {
+      throw new Error("Expected p1 to have a card to discard");
+    }
+
+    const discarded = handAndFootDefinition.applyAction({
+      state: drawn,
+      playerId: "p1",
+      rules: handAndFootDefinition.defaultRules,
+      action: { type: "discard", cardId }
+    });
+    expect(discarded.lastEventSeq).toBe(2);
+    expect(discarded.lastEvent).toBe("p1 discarded.");
+  });
+
   it("still allows melding before the required discard after drawing", () => {
     const state = startState();
     const p1 = state.players.p1;

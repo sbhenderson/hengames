@@ -36,6 +36,7 @@ export function getHandAndFootPlayerView(input: {
     melds: JSON.parse(JSON.stringify(state.melds)),
     teamScores: { ...state.teamScores },
     roundScores: state.roundScores.map(score => ({ ...score })),
-    lastEvent: state.lastEvent
+    lastEvent: state.lastEvent,
+    lastEventSeq: state.lastEventSeq
   };
 }

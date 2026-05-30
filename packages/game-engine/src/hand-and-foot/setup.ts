@@ -75,6 +75,7 @@ export function createInitialHandAndFootState(input: {
     melds: [],
     teamScores: { red: 0, blue: 0 },
     roundScores: [],
-    lastEvent: "Game started."
+    lastEvent: "Game started.",
+    lastEventSeq: 0
   };
 }

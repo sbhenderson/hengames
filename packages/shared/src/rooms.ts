@@ -68,6 +68,7 @@ export type PublicRoomSnapshot<TPlayerView = unknown> = {
   hostParticipantId: ParticipantId;
   options: RoomOptions;
   currentParticipantId: ParticipantId | null;
+  gameInstanceId: string | null;
   participants: Array<Omit<Participant, "token">>;
   seats: Seat[];
   spectatorIds: ParticipantId[];

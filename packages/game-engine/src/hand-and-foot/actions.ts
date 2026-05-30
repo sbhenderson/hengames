@@ -3,6 +3,11 @@ import { isWildRank } from "./cards.js";
 import { cardPoints, classifyMeld, scoreRound } from "./scoring.js";
 import type { HandAndFootAction, HandAndFootRules, HandAndFootState } from "./types.js";
 
+function setEvent(state: HandAndFootState, message: string): void {
+  state.lastEvent = message;
+  state.lastEventSeq += 1;
+}
+
 export function applyHandAndFootAction(input: {
   state: HandAndFootState;
   action: HandAndFootAction;
@@ -46,7 +51,7 @@ function drawCards(state: HandAndFootState, playerId: string, rules: HandAndFoot
 
   activeCards(player).push(...drawn);
   state.turnStep = "must-discard";
-  state.lastEvent = `${playerId} drew ${drawn.length} cards.`;
+  setEvent(state, `${playerId} drew ${drawn.length} cards.`);
   return state;
 }
 
@@ -95,7 +100,7 @@ function meldCards(
       target.cards.push(...cards);
       target.isBook = target.cards.length >= rules.cleanBookSize;
       target.isClean = target.isBook && target.cards.every((card) => card.rank === target.rank);
-      state.lastEvent = `${playerId} added ${cards.length} cards to a meld.`;
+      setEvent(state, `${playerId} added ${cards.length} cards to a meld.`);
     } else {
       const roundIndex = Math.min(state.round - 1, rules.openingMeldMinimums.length - 1);
       const openingMinimum = rules.openingMeldMinimums[roundIndex];
@@ -114,7 +119,7 @@ function meldCards(
         rules
       });
       state.melds.push(meld);
-      state.lastEvent = `${playerId} created a meld of ${meld.rank}.`;
+      setEvent(state, `${playerId} created a meld of ${meld.rank}.`);
     }
   } catch (error) {
     activeCards(player).push(...cards);
@@ -123,7 +128,7 @@ function meldCards(
 
   if (player.hand.length === 0 && player.activePile === "hand") {
     player.activePile = "foot";
-    state.lastEvent = `${playerId} entered their foot.`;
+    setEvent(state, `${playerId} entered their foot.`);
   }
 
   // Check if melding would empty the active foot without meeting going-out requirements
@@ -165,7 +170,7 @@ function discardCard(
   state.discardPile.push(card);
   state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.playerOrder.length;
   state.turnStep = "must-draw";
-  state.lastEvent = `${playerId} discarded.`;
+  setEvent(state, `${playerId} discarded.`);
   return maybeFinishRound(state, rules);
 }
 
@@ -191,7 +196,7 @@ function maybeFinishRound(state: HandAndFootState, rules: HandAndFootRules): Han
   state.teamScores.red += roundScore.red;
   state.teamScores.blue += roundScore.blue;
   state.phase = state.teamScores.red >= rules.gameEndScore || state.teamScores.blue >= rules.gameEndScore ? "game-over" : "round-over";
-  state.lastEvent = `${emptyPlayer.id} went out.`;
+  setEvent(state, `${emptyPlayer.id} went out.`);
   return state;
 }
 

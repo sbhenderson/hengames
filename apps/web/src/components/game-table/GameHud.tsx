@@ -1,5 +1,6 @@
 import type { ParticipantAvatar } from "@hengames/shared";
 import { AvatarPicker } from "../AvatarPicker";
+import { NotificationsMenu, type GameNotification } from "./NotificationsMenu";
 import type { HandAndFootTableView, TeamId } from "./types";
 
 function turnStepLabel(turnStep: HandAndFootTableView["turnStep"]): string {
@@ -26,6 +27,7 @@ export function GameHud(props: {
   playerTeam?: TeamId;
   activePile?: "hand" | "foot";
   turnStep: HandAndFootTableView["turnStep"];
+  notifications: GameNotification[];
   avatarDisabled: boolean;
   avatarError?: string | null;
   onBack(): void;
@@ -37,6 +39,7 @@ export function GameHud(props: {
         <button type="button" className="link-button game-hud__back" onClick={props.onBack}>Back</button>
         <span className="game-hud__room">Room {props.roomCode}</span>
         <span className={props.isOwnTurn ? "turn-pill active" : "turn-pill"}>{props.isOwnTurn ? "Your turn" : "Waiting"}</span>
+        <NotificationsMenu notifications={props.notifications} />
       </div>
       <div className="game-hud__main">
         <div aria-live="polite" aria-atomic="true">

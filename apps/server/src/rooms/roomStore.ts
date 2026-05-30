@@ -37,6 +37,7 @@ type RoomRecord = {
   options: RoomOptions;
   rules: typeof handAndFootDefinition.defaultRules;
   gameState: HandAndFootState | null;
+  gameInstanceId: string | null;
   createdAt: string;
   lastActivityAt: number;
 };
@@ -157,6 +158,7 @@ export function createRoomStore() {
       hostParticipantId: room.hostParticipantId,
       options: { ...room.options },
       currentParticipantId,
+      gameInstanceId: room.gameInstanceId,
       participants: publicParticipants,
       seats: room.seats.map(s => ({ ...s })),
       spectatorIds: Array.from(room.spectatorIds),
@@ -196,6 +198,7 @@ export function createRoomStore() {
       options,
       rules,
       gameState: null,
+      gameInstanceId: null,
       createdAt: new Date(now).toISOString(),
       lastActivityAt: now
     };
@@ -342,6 +345,7 @@ export function createRoomStore() {
     }
 
     room.gameState = null;
+    room.gameInstanceId = null;
     room.status = "waiting";
     touchRoom(room);
 
@@ -419,6 +423,7 @@ export function createRoomStore() {
     });
 
     room.gameState = gameState;
+    room.gameInstanceId = randomUUID();
     room.status = "playing";
     touchRoom(room);
 
