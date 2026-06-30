@@ -1,16 +1,18 @@
 import type { ParticipantAvatar } from "@hengames/shared";
 import { AvatarPicker } from "../AvatarPicker";
+import { SoundToggle } from "../SoundToggle";
+import { Hen } from "./Hen";
 import { NotificationsMenu, type GameNotification } from "./NotificationsMenu";
 import type { HandAndFootTableView, TeamId } from "./types";
 
 function turnStepLabel(turnStep: HandAndFootTableView["turnStep"]): string {
   if (turnStep === "must-draw") {
-    return "Draw";
+    return "Draw a card";
   }
   if (turnStep === "must-discard") {
     return "Meld or discard";
   }
-  return "Meld";
+  return "Meld your cards";
 }
 
 export function GameHud(props: {
@@ -39,21 +41,25 @@ export function GameHud(props: {
         <button type="button" className="link-button game-hud__back" onClick={props.onBack}>Back</button>
         <span className="game-hud__room">Room {props.roomCode}</span>
         <span className={props.isOwnTurn ? "turn-pill active" : "turn-pill"}>{props.isOwnTurn ? "Your turn" : "Waiting"}</span>
+        <SoundToggle />
         <NotificationsMenu notifications={props.notifications} />
       </div>
       <div className="game-hud__main">
+        <span className="round-badge" aria-label={`Round ${props.round}`}>
+          <small>Round</small>
+          <strong>{props.round}</strong>
+        </span>
         <div aria-live="polite" aria-atomic="true">
-          <strong>Round {props.round}</strong>
-          <p>{props.actionPrompt}</p>
+          <p className={props.isOwnTurn ? "action-prompt is-yours" : "action-prompt"}>{props.actionPrompt}</p>
+          <span className="hen-turn">
+            <Hen size={18} tone={props.isOwnTurn ? "amber" : "cream"} title="Turn marker" />
+            <span className="game-hud__meta">{turnStepLabel(props.turnStep)} · {props.currentPlayerName}</span>
+          </span>
         </div>
         <div className="score-strip" aria-label="Team scores">
           <span className="team-score red-team">Red {props.teamScores.red}</span>
           <span className="team-score blue-team">Blue {props.teamScores.blue}</span>
         </div>
-      </div>
-      <div className="game-hud__meta">
-        <span>Current: {props.currentPlayerName}</span>
-        <span>Step: {turnStepLabel(props.turnStep)}</span>
       </div>
       {props.participant ? (
         <div className="game-hud__player">

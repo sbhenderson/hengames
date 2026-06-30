@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ParticipantAvatar } from "@hengames/shared";
 import { trpc, type RoomSnapshot } from "../api/trpc";
+import { useFeedback } from "../feedback/feedback";
 import { GameHud } from "./game-table/GameHud";
 import { HandTray } from "./game-table/HandTray";
 import { PlayerStrip, type PlayerStripParticipant } from "./game-table/PlayerStrip";
@@ -17,6 +18,7 @@ export function GameTable(props: {
 }) {
   const action = trpc.gameAction.useMutation();
   const updateAvatar = trpc.updateAvatar.useMutation();
+  const { fire } = useFeedback();
   const [actionError, setActionError] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const view = props.room.currentView as HandAndFootTableView | null;
@@ -30,6 +32,16 @@ export function GameTable(props: {
   const ownPlayer = currentParticipantId && view ? view.players[currentParticipantId] : undefined;
   const visibleCards = ownPlayer?.activePile === "foot" ? ownPlayer.foot : ownPlayer?.hand;
   const participant = props.room.participants.find((candidate) => candidate.id === currentParticipantId);
+
+  const wasOwnTurnRef = useRef(false);
+  useEffect(() => {
+    const ownTurn = Boolean(view && view.currentPlayerId === currentParticipantId);
+    if (ownTurn && !wasOwnTurnRef.current) {
+      fire("turn");
+    }
+    wasOwnTurnRef.current = ownTurn;
+  }, [view, currentParticipantId, fire]);
+
   const participants = useMemo(
     () =>
       props.room.participants.reduce<Record<string, PlayerStripParticipant>>((result, candidate) => {
@@ -118,7 +130,7 @@ export function GameTable(props: {
           melds={view.melds}
           topDiscard={view.topDiscard}
         />
-        <PlayerStrip currentPlayerId={view.currentPlayerId} participants={participants} players={view.players} />
+        <PlayerStrip currentPlayerId={view.currentPlayerId} participants={participants} players={view.players} selfId={currentParticipantId} />
         <HandTray
           actionError={actionError}
           actionPending={action.isPending}

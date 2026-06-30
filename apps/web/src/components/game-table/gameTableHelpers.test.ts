@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Card } from "@hengames/shared";
-import { bookClassName, bookLabel, formatCard, formatCardRank } from "./cardDisplay";
+import { formatCard, formatCardRank, isRedSuit, meldSeal, suitChar } from "./cardDisplay";
 import type { MeldView } from "./types";
 import {
   analyzeSelectedCards,
@@ -17,14 +17,23 @@ function card(id: string, rank: Card["rank"], suit: Card["suit"] = "hearts"): Ca
 }
 
 describe("card display helpers", () => {
-  test("formats standard cards and jokers", () => {
+  test("formats standard cards and jokers as accessible text", () => {
     expect(formatCardRank(card("a", "A", "spades"))).toBe("A");
-    expect(formatCard(card("a", "A", "spades"))).toBe("A ♠️");
-    expect(formatCardRank(card("j", "JOKER"))).toBe("🤡");
-    expect(formatCard(card("j", "JOKER"))).toBe("🤡 Joker");
+    expect(formatCard(card("a", "A", "spades"))).toBe("A of spades");
+    expect(formatCardRank(card("j", "JOKER"))).toBe("JOKER");
+    expect(formatCard(card("j", "JOKER"))).toBe("Joker");
   });
 
-  test("labels clean and dirty books with text and classes", () => {
+  test("maps suits to glyphs and colors", () => {
+    expect(suitChar.spades).toBe("\u2660");
+    expect(suitChar.hearts).toBe("\u2665");
+    expect(isRedSuit("hearts")).toBe(true);
+    expect(isRedSuit("diamonds")).toBe(true);
+    expect(isRedSuit("spades")).toBe(false);
+    expect(isRedSuit("clubs")).toBe(false);
+  });
+
+  test("seals clean and dirty books and building melds", () => {
     const cleanBook: MeldView = {
       id: "clean-book",
       rank: "8",
@@ -58,21 +67,10 @@ describe("card display helpers", () => {
       isClean: false
     };
 
-    // Clean completed book
-    expect(bookLabel(cleanBook)).toBe("Red clean book");
-    expect(bookClassName(cleanBook)).toBe("book-badge clean-book");
-
-    // Dirty completed book
-    expect(bookLabel(dirtyBook)).toBe("Black dirty book");
-    expect(bookClassName(dirtyBook)).toBe("book-badge dirty-book");
-
-    // Clean in-progress meld
-    expect(bookLabel(cleanBuilding)).toBe("Building red book");
-    expect(bookClassName(cleanBuilding)).toBe("book-badge clean-book");
-
-    // Dirty in-progress meld
-    expect(bookLabel(dirtyBuilding)).toBe("Building black book");
-    expect(bookClassName(dirtyBuilding)).toBe("book-badge dirty-book");
+    expect(meldSeal(cleanBook)).toEqual({ kind: "clean", label: "Clean book" });
+    expect(meldSeal(dirtyBook)).toEqual({ kind: "dirty", label: "Dirty book" });
+    expect(meldSeal(cleanBuilding)).toEqual({ kind: "building-clean", label: "Clean" });
+    expect(meldSeal(dirtyBuilding)).toEqual({ kind: "building-dirty", label: "Dirty" });
   });
 });
 

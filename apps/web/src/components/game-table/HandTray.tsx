@@ -1,8 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+  useSortable
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Card } from "@hengames/shared";
+import { formatCard } from "./cardDisplay";
 import { analyzeSelectedCards, getCardHints, reconcileCardOrder } from "./gameTableHelpers";
-import { PlayingCardButton } from "./PlayingCardButton";
-import type { HandAndFootTableView, MeldView, TeamId } from "./types";
+import { PlayingCard } from "./PlayingCard";
+import type { CardHint, HandAndFootTableView, MeldView, TeamId } from "./types";
 
 export function HandTray(props: {
   cards: Card[] | undefined;
@@ -20,8 +36,9 @@ export function HandTray(props: {
 }) {
   const [orderedCardIds, setOrderedCardIds] = useState<string[]>([]);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
-  const draggedCardIdRef = useRef<string | null>(null);
   const visibleCards = useMemo(() => props.cards ?? [], [props.cards]);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   useEffect(() => {
     setOrderedCardIds((currentOrder) => reconcileCardOrder(visibleCards, currentOrder));
@@ -54,32 +71,73 @@ export function HandTray(props: {
   );
 
   const pileLabel = props.activePile ?? "hand";
+  const selectedIds = analysis.selectedCards.map((card) => card.id);
+
+  const toggleSelect = (cardId: string) => {
+    if (props.isOwnTurn && !props.actionPending && props.turnStep === "must-discard" && selectedCardIds.length === 1 && selectedCardIds[0] === cardId) {
+      props.onDiscard(cardId);
+      return;
+    }
+    setSelectedCardIds((current) =>
+      current.includes(cardId) ? current.filter((id) => id !== cardId) : [...current, cardId]
+    );
+  };
+
+  const moveBy = (cardId: string, offset: -1 | 1) => {
+    setOrderedCardIds((current) => {
+      const index = current.indexOf(cardId);
+      const next = index + offset;
+      if (index === -1 || next < 0 || next >= current.length) {
+        return current;
+      }
+      return arrayMove(current, index, next);
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+    setOrderedCardIds((current) => {
+      const from = current.indexOf(String(active.id));
+      const to = current.indexOf(String(over.id));
+      if (from === -1 || to === -1) {
+        return current;
+      }
+      return arrayMove(current, from, to);
+    });
+  };
 
   if (!visibleCards.length) {
     return (
       <section className="hand-tray" aria-label={`Your ${pileLabel}`}>
-        <h2>Your {pileLabel}</h2>
-        <p className="helper-text">No visible cards right now. You may be spectating or waiting for your next pile.</p>
+        <div className="hand-tray__header">
+          <h2>Your {pileLabel}</h2>
+        </div>
+        <p className="empty-hand">No cards in view right now — you may be spectating or waiting for your foot.</p>
       </section>
     );
   }
 
-  const selectedIds = analysis.selectedCards.map((card) => card.id);
+  const drawDisabled = !props.isOwnTurn || props.turnStep !== "must-draw" || props.actionPending;
 
   return (
     <section className="hand-tray" aria-label={`Your ${pileLabel}`}>
       <div className="hand-tray__header">
         <div>
           <h2>Your {pileLabel}</h2>
-          <p className="helper-text">{visibleCards.length} cards. Tap to select; selected cards can be dragged or moved left/right. Tap a selected discard card again to discard it.</p>
+          <p className="helper-text">{visibleCards.length} cards · tap to pick up, drag to reorder</p>
         </div>
-        <button disabled={!props.isOwnTurn || props.turnStep !== "must-draw" || props.actionPending} onClick={props.onDraw} type="button">
+        <button className={drawDisabled ? "" : "primary"} disabled={drawDisabled} onClick={props.onDraw} type="button">
           Draw 2
         </button>
       </div>
+
       {props.actionError ? <p className="action-error" role="alert">{props.actionError}</p> : null}
+
       <div className="hand-action-bar" aria-label="Selected card actions">
-        <span>{selectedIds.length} selected</span>
+        <span className="hand-action-bar__count">{selectedIds.length} selected</span>
         <button disabled={!props.isOwnTurn || !analysis.canCreateMeld || props.actionPending} onClick={() => props.onCreateMeld(selectedIds)} type="button">
           Create meld
         </button>
@@ -88,85 +146,88 @@ export function HandTray(props: {
             {option.label}
           </button>
         ))}
-        <button
-          disabled={!props.isOwnTurn || !analysis.canDiscard || props.actionPending}
-          onClick={() => {
-            const cardId = selectedIds[0];
-            if (cardId) {
-              props.onDiscard(cardId);
-            }
-          }}
-          type="button"
-        >
+        <button disabled={!props.isOwnTurn || !analysis.canDiscard || props.actionPending} onClick={() => selectedIds[0] && props.onDiscard(selectedIds[0])} type="button">
           Discard
         </button>
         <button disabled={!selectedIds.length || props.actionPending} onClick={() => setSelectedCardIds([])} type="button">
           Clear
         </button>
       </div>
-      <div className="hand-card-row">
-        {orderedCards.map((card, index) => (
-          <PlayingCardButton
-            card={card}
-            canMoveLeft={index > 0}
-            canMoveRight={index < orderedCards.length - 1}
-            draggable={selectedCardIds.includes(card.id)}
-            hint={hints[card.id]}
-            key={card.id}
-            onDragEnd={() => {
-              draggedCardIdRef.current = null;
-            }}
-            onDragEnter={() => {
-              const draggedCardId = draggedCardIdRef.current;
-              if (draggedCardId && draggedCardId !== card.id) {
-                setOrderedCardIds((currentOrder) => moveBefore(currentOrder, draggedCardId, card.id));
-              }
-            }}
-            onDragStart={() => {
-              draggedCardIdRef.current = card.id;
-            }}
-            onMoveLeft={() => setOrderedCardIds((currentOrder) => moveByOffset(currentOrder, card.id, -1))}
-            onMoveRight={() => setOrderedCardIds((currentOrder) => moveByOffset(currentOrder, card.id, 1))}
-            onToggle={() => {
-              if (props.isOwnTurn && !props.actionPending && props.turnStep === "must-discard" && selectedCardIds.length === 1 && selectedCardIds[0] === card.id) {
-                props.onDiscard(card.id);
-                return;
-              }
-              setSelectedCardIds((currentSelection) =>
-                currentSelection.includes(card.id)
-                  ? currentSelection.filter((selectedCardId) => selectedCardId !== card.id)
-                  : [...currentSelection, card.id]
-              );
-            }}
-            selected={selectedCardIds.includes(card.id)}
-          />
-        ))}
-      </div>
+
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={orderedCardIds} strategy={horizontalListSortingStrategy}>
+          <div className="hand-fan">
+            <div className="hand-fan__inner">
+              {orderedCards.map((card, index) => (
+                <SortableCard
+                  card={card}
+                  canMoveLeft={index > 0}
+                  canMoveRight={index < orderedCards.length - 1}
+                  hint={hints[card.id]}
+                  index={index}
+                  key={card.id}
+                  onMoveLeft={() => moveBy(card.id, -1)}
+                  onMoveRight={() => moveBy(card.id, 1)}
+                  onToggle={() => toggleSelect(card.id)}
+                  selected={selectedCardIds.includes(card.id)}
+                  total={orderedCards.length}
+                />
+              ))}
+            </div>
+          </div>
+        </SortableContext>
+      </DndContext>
     </section>
   );
 }
 
-function moveBefore(cardIds: string[], movingCardId: string, targetCardId: string): string[] {
-  const withoutMoving = cardIds.filter((cardId) => cardId !== movingCardId);
-  const targetIndex = withoutMoving.indexOf(targetCardId);
-  if (targetIndex === -1) {
-    return cardIds;
-  }
-  return [...withoutMoving.slice(0, targetIndex), movingCardId, ...withoutMoving.slice(targetIndex)];
-}
+function SortableCard(props: {
+  card: Card;
+  index: number;
+  total: number;
+  selected: boolean;
+  hint?: CardHint;
+  canMoveLeft: boolean;
+  canMoveRight: boolean;
+  onToggle(): void;
+  onMoveLeft(): void;
+  onMoveRight(): void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.card.id });
+  const hintClass = props.hint ? ` hint-${props.hint}` : "";
 
-function moveByOffset(cardIds: string[], cardId: string, offset: -1 | 1): string[] {
-  const currentIndex = cardIds.indexOf(cardId);
-  const nextIndex = currentIndex + offset;
-  if (currentIndex === -1 || nextIndex < 0 || nextIndex >= cardIds.length) {
-    return cardIds;
-  }
-  const nextOrder = [...cardIds];
-  const card = nextOrder[currentIndex];
-  if (!card) {
-    return cardIds;
-  }
-  nextOrder.splice(currentIndex, 1);
-  nextOrder.splice(nextIndex, 0, card);
-  return nextOrder;
+  // Gentle fan: rotate cards around the centre of the hand.
+  const mid = (props.total - 1) / 2;
+  const tilt = props.total > 1 ? (props.index - mid) * Math.min(2.4, 16 / props.total) : 0;
+  const lift = props.total > 1 ? Math.abs(props.index - mid) * 0.05 : 0;
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : props.selected ? 30 : 10
+  };
+
+  return (
+    <div className="hand-card-slot" ref={setNodeRef} style={style}>
+      <div className={`hand-card-shell${props.selected ? " selected" : ""}`} style={{ "--tilt": `${tilt}deg`, "--lift": `${lift}rem` } as React.CSSProperties}>
+        <button
+          className="playing-card-button"
+          onClick={props.onToggle}
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label={formatCard(props.card)}
+          aria-pressed={props.selected}
+        >
+          <PlayingCard card={props.card} className={hintClass.trim()} />
+        </button>
+        {props.selected ? (
+          <div className="card-reorder-controls" role="group" aria-label={`Reorder ${formatCard(props.card)}`}>
+            <button disabled={!props.canMoveLeft} onClick={props.onMoveLeft} type="button">←</button>
+            <button disabled={!props.canMoveRight} onClick={props.onMoveRight} type="button">→</button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
 }
