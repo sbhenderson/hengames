@@ -2,6 +2,7 @@ import { DEFAULT_AVATAR_CHOICES, type ParticipantAvatar } from "@hengames/shared
 
 const participantTokenKey = "hengames.participantToken";
 const sessionProfileKey = "hengames.sessionProfile";
+const profileTokenKey = "hengames.profileToken";
 
 export type SessionProfile = {
   displayName: string;
@@ -45,6 +46,24 @@ export function loadSessionProfile(): SessionProfile {
   return saveSessionProfile(generateSessionProfile());
 }
 
-export function regenerateSessionProfile(): SessionProfile {
-  return saveSessionProfile(generateSessionProfile());
+function createToken(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+/**
+ * Durable identifier for this browser. The server adopts unrecognised tokens so
+ * a player keeps their profile and running high scores across server restarts.
+ */
+export function loadProfileToken(): string {
+  const existing = window.localStorage.getItem(profileTokenKey);
+  if (existing) {
+    return existing;
+  }
+
+  const token = createToken();
+  window.localStorage.setItem(profileTokenKey, token);
+  return token;
 }

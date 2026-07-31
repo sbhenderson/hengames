@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PublicRoomSnapshot } from "@hengames/shared";
+import type { GameId, PublicRoomSnapshot } from "@hengames/shared";
 import { trpc, type RoomSnapshot } from "./api/trpc";
 import { useRoomSocket } from "./api/useRoomSocket";
 import { GameTable } from "./components/GameTable";
-import { HomePage } from "./components/HomePage";
+import { LandingPage } from "./components/LandingPage";
+import { RoomBrowser } from "./components/RoomBrowser";
+import { PyramidsGame } from "./components/pyramids/PyramidsGame";
 import { Lobby } from "./components/Lobby";
 import type { GameNotification } from "./components/game-table/NotificationsMenu";
 
 const MAX_NOTIFICATIONS = 50;
+
+type View = { name: "landing" } | { name: "game"; gameId: GameId };
 
 function readEvent(room: RoomSnapshot | null): { message: string; seq: number } | null {
   const view = room?.currentView as { lastEvent?: unknown; lastEventSeq?: unknown } | null;
@@ -18,6 +22,7 @@ function readEvent(room: RoomSnapshot | null): { message: string; seq: number } 
 }
 
 export function App() {
+  const [view, setView] = useState<View>({ name: "landing" });
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [participantToken, setParticipantToken] = useState<string | undefined>();
   const [socketSnapshot, setSocketSnapshot] = useState<RoomSnapshot | null>(null);
@@ -100,8 +105,20 @@ export function App() {
     maxSeqRef.current = -1;
   }, []);
 
+  const goToLanding = useCallback(() => {
+    setView({ name: "landing" });
+  }, []);
+
   if (!roomCode || !participantToken) {
-    return <HomePage onEnterRoom={enterRoom} />;
+    if (view.name === "landing") {
+      return <LandingPage onPickGame={(gameId) => setView({ name: "game", gameId })} />;
+    }
+
+    if (view.gameId === "pyramids") {
+      return <PyramidsGame onBack={goToLanding} />;
+    }
+
+    return <RoomBrowser onBack={goToLanding} onEnterRoom={enterRoom} />;
   }
 
   if (!room) {

@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import {
-  DEFAULT_AVATAR_CHOICES,
   type Participant,
   type ParticipantAvatar,
   type ParticipantId,
@@ -18,13 +17,12 @@ import {
   type HandAndFootPlayerView,
   type HandAndFootState
 } from "@hengames/game-engine";
+import { generateAvatar, generateDisplayName, normalizeAvatar, normalizeDisplayName } from "../identity.js";
 
 const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const ROOM_CODE_LENGTH = 6;
 const ROOM_INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
 const DEFAULT_ROOM_OPTIONS: RoomOptions = { deckCount: handAndFootDefinition.defaultRules.deckCount };
-const ADJECTIVES = ["brave", "clever", "cozy", "curious", "dapper", "lucky", "peeking", "snappy"];
-const ANIMALS = ["badger", "fox", "otter", "penguin", "raven", "turtle", "walrus", "wombat"];
 
 type RoomRecord = {
   code: RoomCode;
@@ -65,38 +63,6 @@ export function createRoomStore() {
       token,
       connected: true
     };
-  }
-
-  function normalizeDisplayName(displayName?: string): string | undefined {
-    const trimmed = displayName?.trim();
-    return trimmed ? trimmed : undefined;
-  }
-
-  function hashText(value: string): number {
-    let hash = 0;
-    for (let index = 0; index < value.length; index += 1) {
-      hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
-    }
-    return hash;
-  }
-
-  function generateDisplayName(id: string): string {
-    const hash = hashText(id);
-    return `${ADJECTIVES[hash % ADJECTIVES.length]}-${ANIMALS[Math.floor(hash / ADJECTIVES.length) % ANIMALS.length]}`;
-  }
-
-  function generateAvatar(id: string): ParticipantAvatar {
-    const hash = hashText(id);
-    return { ...DEFAULT_AVATAR_CHOICES[hash % DEFAULT_AVATAR_CHOICES.length]! };
-  }
-
-  function normalizeAvatar(avatar: ParticipantAvatar): ParticipantAvatar {
-    const emoji = avatar.emoji.trim();
-    const color = avatar.color.trim();
-    if (!emoji || !/^#[0-9a-fA-F]{6}$/.test(color)) {
-      throw new Error("Avatar requires an emoji and a hex color.");
-    }
-    return { emoji, color };
   }
 
   function createRoomOptions(input?: Partial<RoomOptions>): RoomOptions {

@@ -12,6 +12,9 @@ export const handAndFootDefinition: GameDefinition<
 > = {
   id: "hand-and-foot",
   displayName: "Hand and Foot",
+  mode: "multiplayer",
+  minPlayers: 4,
+  maxPlayers: 4,
   defaultRules: defaultHandAndFootRules,
   createInitialState: createInitialHandAndFootState,
   getPlayerView: getHandAndFootPlayerView,

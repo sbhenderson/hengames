@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { createTrpcClient, trpc } from "./api/trpc";
 import { FeedbackProvider } from "./feedback/feedback";
+import { ProfileProvider } from "./profile/ProfileProvider";
 import { GamePreview } from "./dev/GamePreview";
 import { CardGallery } from "./dev/CardGallery";
 import "./styles.css";
@@ -24,7 +25,9 @@ function Providers() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <FeedbackProvider>{content}</FeedbackProvider>
+        <FeedbackProvider>
+          <ProfileProvider>{content}</ProfileProvider>
+        </FeedbackProvider>
       </QueryClientProvider>
     </trpc.Provider>
   );

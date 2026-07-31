@@ -1,18 +1,24 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { createRoomStore } from "../rooms/roomStore.js";
+import { createProfileStore } from "../profiles/profileStore.js";
+import { createSoloStore } from "../solo/soloStore.js";
 import { createAppRouter } from "./appRouter.js";
 
 describe("appRouter", () => {
   let roomStore: ReturnType<typeof createRoomStore>;
+  let profileStore: ReturnType<typeof createProfileStore>;
+  let soloStore: ReturnType<typeof createSoloStore>;
   let mockWsHub: any;
   let router: ReturnType<typeof createAppRouter>;
 
   beforeEach(() => {
     roomStore = createRoomStore();
+    profileStore = createProfileStore();
+    soloStore = createSoloStore({ profileStore });
     mockWsHub = {
       broadcastRoom: vi.fn()
     };
-    router = createAppRouter({ roomStore, wsHub: mockWsHub });
+    router = createAppRouter({ roomStore, wsHub: mockWsHub, profileStore, soloStore });
   });
 
   describe("listRooms", () => {
@@ -434,6 +440,120 @@ describe("appRouter", () => {
 
       // Invalid seats should fail (TypeScript validates this at compile time)
       // Runtime validation is tested implicitly through the zod schema
+    });
+  });
+
+  describe("game catalog", () => {
+    test("lists every playable game with its mode", async () => {
+      const games = await router.createCaller({}).listGames();
+
+      expect(games.map((game) => game.id)).toEqual(["hand-and-foot", "pyramids"]);
+      expect(games.find((game) => game.id === "pyramids")?.mode).toBe("solo");
+      expect(games.find((game) => game.id === "hand-and-foot")?.mode).toBe("multiplayer");
+    });
+  });
+
+  describe("profiles", () => {
+    test("ensureProfile creates and then reuses a profile", async () => {
+      const caller = router.createCaller({});
+      const created = await caller.ensureProfile({});
+      const reused = await caller.ensureProfile({ profileToken: created.token });
+
+      expect(reused.id).toBe(created.id);
+    });
+
+    test("getProfile and updateProfile round-trip", async () => {
+      const caller = router.createCaller({});
+      const created = await caller.ensureProfile({ displayName: "Henrietta" });
+
+      const updated = await caller.updateProfile({
+        profileToken: created.token,
+        avatar: { emoji: "🐔", color: "#ff8800" }
+      });
+      expect(updated.avatar.emoji).toBe("🐔");
+
+      const fetched = await caller.getProfile({ profileToken: created.token });
+      expect(fetched.displayName).toBe("Henrietta");
+      expect(fetched).not.toHaveProperty("token");
+    });
+
+    test("listHighScores returns ranked running totals", async () => {
+      const caller = router.createCaller({});
+      const player = await caller.ensureProfile({ displayName: "Henrietta" });
+      profileStore.recordGameResult({ token: player.token, gameId: "pyramids", score: 42 });
+
+      const scores = await caller.listHighScores({ gameId: "pyramids" });
+      expect(scores).toEqual([
+        expect.objectContaining({ displayName: "Henrietta", score: 42, gamesPlayed: 1 })
+      ]);
+    });
+  });
+
+  describe("solo games", () => {
+    test("starts, plays and collects a pyramids game", async () => {
+      const caller = router.createCaller({});
+      const player = await caller.ensureProfile({});
+
+      let session = await caller.startSoloGame({ gameId: "pyramids", profileToken: player.token });
+      expect(session.gameId).toBe("pyramids");
+      expect(session.status).toBe("playing");
+
+      for (let guard = 0; guard < 200 && session.status === "playing"; guard += 1) {
+        const cardId = (session.view as { playableCardIds: string[] }).playableCardIds[0];
+        session = await caller.soloAction({
+          sessionId: session.sessionId,
+          profileToken: player.token,
+          action: cardId ? { type: "play", cardId } : { type: "draw" }
+        });
+      }
+
+      expect(session.status).toBe("game-over");
+
+      const collected = await caller.collectSoloPoints({
+        sessionId: session.sessionId,
+        profileToken: player.token
+      });
+
+      expect(collected.awarded).toBe(session.score);
+      expect(collected.session.status).toBe("collected");
+      expect(collected.session.highScore).toBe(session.score);
+    });
+
+    test("getSoloGame returns the current session", async () => {
+      const caller = router.createCaller({});
+      const player = await caller.ensureProfile({});
+      const started = await caller.startSoloGame({ gameId: "pyramids", profileToken: player.token });
+
+      const fetched = await caller.getSoloGame({
+        sessionId: started.sessionId,
+        profileToken: player.token
+      });
+
+      expect(fetched.sessionId).toBe(started.sessionId);
+    });
+
+    test("rejects starting a multiplayer game as solo", async () => {
+      const caller = router.createCaller({});
+      const player = await caller.ensureProfile({});
+
+      await expect(
+        caller.startSoloGame({ gameId: "hand-and-foot", profileToken: player.token })
+      ).rejects.toThrow(/not a solo game/);
+    });
+
+    test("soloAction does not accept a collect action", async () => {
+      const caller = router.createCaller({});
+      const player = await caller.ensureProfile({});
+      const started = await caller.startSoloGame({ gameId: "pyramids", profileToken: player.token });
+
+      await expect(
+        caller.soloAction({
+          sessionId: started.sessionId,
+          profileToken: player.token,
+          // Collecting must go through collectSoloPoints so the score is banked.
+          action: { type: "collect" } as never
+        })
+      ).rejects.toThrow();
     });
   });
 });

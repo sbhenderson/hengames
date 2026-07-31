@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { GAME_CATALOG, type GameId } from "@hengames/shared";
 import { router, publicProcedure } from "../trpc.js";
 import { createRoomStore } from "../rooms/roomStore.js";
+import type { ProfileStore } from "../profiles/profileStore.js";
+import type { SoloStore } from "../solo/soloStore.js";
 import type { WsHub } from "../wsHub.js";
 
 const seatIdSchema = z.enum(["north", "east", "south", "west"]);
@@ -11,6 +14,15 @@ const avatarSchema = z.object({
   emoji: z.string().min(1),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/)
 });
+
+const gameIdSchema = z.enum(
+  GAME_CATALOG.map((game) => game.id) as [GameId, ...GameId[]]
+);
+
+const soloActionSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("play"), cardId: z.string() }),
+  z.object({ type: z.literal("draw") })
+]);
 
 const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("draw") }),
@@ -28,10 +40,90 @@ const actionSchema = z.discriminatedUnion("type", [
 export function createAppRouter(input: {
   roomStore: ReturnType<typeof createRoomStore>;
   wsHub: WsHub;
+  profileStore: ProfileStore;
+  soloStore: SoloStore;
 }) {
-  const { roomStore, wsHub } = input;
+  const { roomStore, wsHub, profileStore, soloStore } = input;
 
   return router({
+    listGames: publicProcedure.query(() => {
+      return GAME_CATALOG.map((game) => ({ ...game }));
+    }),
+
+    ensureProfile: publicProcedure
+      .input(
+        z.object({
+          profileToken: z.string().optional(),
+          displayName: z.string().optional(),
+          avatar: avatarSchema.optional()
+        })
+      )
+      .mutation(({ input: request }) => {
+        return profileStore.ensureProfile({
+          token: request.profileToken,
+          displayName: request.displayName,
+          avatar: request.avatar
+        });
+      }),
+
+    getProfile: publicProcedure
+      .input(z.object({ profileToken: z.string() }))
+      .query(({ input: request }) => {
+        return profileStore.getProfile(request.profileToken);
+      }),
+
+    updateProfile: publicProcedure
+      .input(
+        z.object({
+          profileToken: z.string(),
+          displayName: z.string().optional(),
+          avatar: avatarSchema.optional()
+        })
+      )
+      .mutation(({ input: request }) => {
+        return profileStore.updateProfile({
+          token: request.profileToken,
+          displayName: request.displayName,
+          avatar: request.avatar
+        });
+      }),
+
+    listHighScores: publicProcedure
+      .input(z.object({ gameId: gameIdSchema, limit: z.number().int().min(1).max(50).optional() }))
+      .query(({ input: request }) => {
+        return profileStore.listHighScores(request);
+      }),
+
+    startSoloGame: publicProcedure
+      .input(z.object({ gameId: gameIdSchema, profileToken: z.string() }))
+      .mutation(({ input: request }) => {
+        return soloStore.startGame(request);
+      }),
+
+    getSoloGame: publicProcedure
+      .input(z.object({ sessionId: z.string(), profileToken: z.string() }))
+      .query(({ input: request }) => {
+        return soloStore.getSession(request);
+      }),
+
+    soloAction: publicProcedure
+      .input(
+        z.object({
+          sessionId: z.string(),
+          profileToken: z.string(),
+          action: soloActionSchema
+        })
+      )
+      .mutation(({ input: request }) => {
+        return soloStore.applyAction(request);
+      }),
+
+    collectSoloPoints: publicProcedure
+      .input(z.object({ sessionId: z.string(), profileToken: z.string() }))
+      .mutation(({ input: request }) => {
+        return soloStore.collect(request);
+      }),
+
     listRooms: publicProcedure.query(() => {
       return roomStore.listRooms();
     }),

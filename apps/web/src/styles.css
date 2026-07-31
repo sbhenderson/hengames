@@ -1237,3 +1237,406 @@ button.playing-card {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Landing page + game picker
+   ============================================================ */
+
+.game-tiles {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 0.75rem;
+}
+
+.game-tile {
+  background: linear-gradient(180deg, rgb(74 53 39 / 0.92), rgb(58 41 30 / 0.92));
+  border: 1px solid rgb(0 0 0 / 0.35);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgb(255 255 255 / 0.05);
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+  padding: 1.1rem 1.25rem;
+}
+
+.game-tile__top {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.game-tile__top h3 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.game-tile__emoji {
+  align-items: center;
+  background: rgb(29 21 15 / 0.55);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  display: inline-flex;
+  font-size: 1.8rem;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.game-tile__tagline {
+  color: var(--cream-dim);
+  font-size: 0.9rem;
+  margin: 0.1rem 0 0;
+}
+
+.game-tile__meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mode-badge {
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem;
+  text-transform: uppercase;
+}
+
+.mode-badge.solo {
+  background: rgb(232 163 61 / 0.18);
+  color: var(--yolk);
+  box-shadow: inset 0 0 0 1px rgb(232 163 61 / 0.4);
+}
+
+.mode-badge.multiplayer {
+  background: rgb(63 125 140 / 0.22);
+  color: var(--teal-soft);
+  box-shadow: inset 0 0 0 1px rgb(63 125 140 / 0.5);
+}
+
+.game-tile__scores {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+}
+
+.game-tile__scores div {
+  background: rgb(29 21 15 / 0.5);
+  border-radius: var(--r-sm);
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+}
+
+.game-tile__scores dt {
+  color: var(--cream-faint);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.game-tile__scores dd {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0.1rem 0 0;
+}
+
+/* ============================================================
+   Pyramids
+   ============================================================ */
+
+.pyramids-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.pyramids-hud {
+  background: linear-gradient(180deg, rgb(74 53 39 / 0.95), rgb(45 32 23 / 0.95));
+  border: 1px solid rgb(0 0 0 / 0.35);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.pyramids-hud__top {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.pyramids-hud__top h1 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.pyramids-stats {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+}
+
+.pyramids-stats div {
+  background: rgb(29 21 15 / 0.55);
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.05);
+  padding: 0.35rem 0.4rem;
+  text-align: center;
+}
+
+.pyramids-stats dt {
+  color: var(--cream-faint);
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.pyramids-stats dd {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0.15rem 0 0;
+}
+
+.pyramids-intro {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.pyramids-rules {
+  color: var(--cream-dim);
+  display: grid;
+  font-size: 0.9rem;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.pyramids-table {
+  background:
+    radial-gradient(circle at 50% 12%, rgb(255 255 255 / 0.07), transparent 60%),
+    linear-gradient(180deg, #3d6b4f, #2f5540);
+  border: 1px solid rgb(0 0 0 / 0.4);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  display: grid;
+  gap: 0.9rem;
+  justify-items: center;
+  padding: 1rem 0.75rem 1.25rem;
+}
+
+.pyramids-headline {
+  color: var(--cream);
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+.pyramids-headline.is-over {
+  color: var(--yolk);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+}
+
+.pyramid-board {
+  --pyr-card-w: clamp(1.75rem, calc((100vw - 3rem) / 7.9), 3rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.pyramid-row {
+  display: flex;
+  gap: 0.15rem;
+  justify-content: center;
+  margin-top: calc(var(--pyr-card-w) * -0.6);
+  position: relative;
+}
+
+.pyramid-row:first-child {
+  margin-top: 0;
+}
+
+.pyramid-slot {
+  aspect-ratio: 2.5 / 3.5;
+  display: grid;
+  place-items: center;
+  width: var(--pyr-card-w);
+}
+
+.pyramid-slot .playing-card,
+.pyramid-slot .card-back {
+  width: var(--pyr-card-w);
+}
+
+.pyramid-slot.is-cleared {
+  visibility: hidden;
+}
+
+.pyramid-card-button {
+  background: transparent;
+  border: none;
+  border-radius: 0.42rem;
+  box-shadow: none;
+  display: block;
+  padding: 0;
+}
+
+.pyramid-card-button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.pyramid-card-button.is-playable {
+  cursor: pointer;
+}
+
+.pyramid-card-button.is-playable .playing-card {
+  box-shadow: 0 0 0 2px var(--yolk), 0 0.35rem 0.7rem rgb(20 12 6 / 0.4);
+  transform: translateY(-0.15rem);
+  transition: transform 120ms ease;
+}
+
+.pyramid-card-button.is-playable:hover .playing-card {
+  transform: translateY(-0.35rem);
+}
+
+.pyramids-piles {
+  align-items: flex-start;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.pyramids-pile {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+}
+
+.pyramids-draw-button {
+  background: transparent;
+  border: none;
+  border-radius: 0.42rem;
+  box-shadow: none;
+  padding: 0;
+}
+
+.pyramids-draw-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.pyramids-draw-button:not(:disabled):hover .card-back {
+  transform: translateY(-0.2rem);
+  transition: transform 120ms ease;
+}
+
+.pyramids-result {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pyramids-result .pyramids-stats {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.card-back.sm {
+  width: 2.4rem;
+}
+
+@media (min-width: 620px) {
+  .pyramid-board {
+    --pyr-card-w: 3rem;
+  }
+
+  .pyramids-stats dt {
+    font-size: 0.7rem;
+  }
+}
+
+/* Piles and the event banner are tuned for the wheat table; recolour them on felt. */
+.pyramids-table .pile__label {
+  color: rgb(243 234 216 / 0.7);
+}
+
+.pyramids-table .pile__count {
+  color: var(--cream);
+}
+
+.pyramids-table .event-banner {
+  background: rgb(0 0 0 / 0.25);
+  border-left-color: var(--yolk);
+  color: var(--cream-dim);
+  width: 100%;
+  max-width: 26rem;
+  text-align: center;
+}
+
+.pyramids-table .action-error {
+  width: 100%;
+  max-width: 26rem;
+}
+
+/* ---------- High score table ---------- */
+
+.high-scores {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.high-score-list {
+  display: grid;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+}
+
+.high-score-row {
+  align-items: center;
+  background: rgb(29 21 15 / 0.5);
+  border-radius: var(--r-sm);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1.5rem auto minmax(0, 1fr) auto auto;
+  padding: 0.4rem 0.6rem;
+}
+
+.high-score-rank {
+  color: var(--cream-faint);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: center;
+}
+
+.high-score-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.high-score-games {
+  color: var(--cream-faint);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.high-score-value {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
