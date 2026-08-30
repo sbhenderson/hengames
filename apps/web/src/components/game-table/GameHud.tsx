@@ -5,16 +5,6 @@ import { Hen } from "./Hen";
 import { NotificationsMenu, type GameNotification } from "./NotificationsMenu";
 import type { HandAndFootTableView, TeamId } from "./types";
 
-function turnStepLabel(turnStep: HandAndFootTableView["turnStep"]): string {
-  if (turnStep === "must-draw") {
-    return "Draw a card";
-  }
-  if (turnStep === "must-discard") {
-    return "Meld or discard";
-  }
-  return "Meld your cards";
-}
-
 export function GameHud(props: {
   roomCode: string;
   round: number;
@@ -49,13 +39,14 @@ export function GameHud(props: {
           <small>Round</small>
           <strong>{props.round}</strong>
         </span>
-        <div aria-live="polite" aria-atomic="true">
-          <p className={props.isOwnTurn ? "action-prompt is-yours" : "action-prompt"}>{props.actionPrompt}</p>
-          <span className="hen-turn">
-            <Hen size={18} tone={props.isOwnTurn ? "amber" : "cream"} title="Turn marker" />
-            <span className="game-hud__meta">{turnStepLabel(props.turnStep)} · {props.currentPlayerName}</span>
-          </span>
-        </div>
+        <p
+          className={props.isOwnTurn ? "action-prompt is-yours" : "action-prompt"}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <Hen size={18} tone={props.isOwnTurn ? "amber" : "cream"} title="Turn marker" />
+          {props.actionPrompt}
+        </p>
         <div className="score-strip" aria-label="Team scores">
           <span className="team-score red-team">Red {props.teamScores.red}</span>
           <span className="team-score blue-team">Blue {props.teamScores.blue}</span>
@@ -64,23 +55,23 @@ export function GameHud(props: {
       {props.participant ? (
         <div className="game-hud__player">
           <span
-            className="avatar"
+            className="avatar small"
             style={{ background: props.participant.avatar.color }}
             aria-label={`${props.participant.displayName}'s avatar`}
             role="img"
           >
             {props.participant.avatar.emoji}
           </span>
-          <div>
-            <strong>{props.participant.displayName}</strong>
-            <p className="helper-text">
+          <span className="game-hud__player-name">
+            <strong>{props.participant.displayName}</strong>{" "}
+            <span className="helper-text game-hud__player-meta">
               Team {props.playerTeam ?? "spectator"}{props.activePile ? `; playing from ${props.activePile}` : ""}.
-            </p>
-            {props.onAvatarChange ? (
-              <AvatarPicker disabled={props.avatarDisabled} value={props.participant.avatar} onChange={props.onAvatarChange} />
-            ) : null}
-            {props.avatarError ? <p className="action-error" role="alert">{props.avatarError}</p> : null}
-          </div>
+            </span>
+          </span>
+          {props.onAvatarChange ? (
+            <AvatarPicker disabled={props.avatarDisabled} value={props.participant.avatar} onChange={props.onAvatarChange} />
+          ) : null}
+          {props.avatarError ? <p className="action-error" role="alert">{props.avatarError}</p> : null}
         </div>
       ) : null}
     </header>

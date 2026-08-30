@@ -348,9 +348,9 @@ select {
   top: 0;
   z-index: 20;
   display: grid;
-  gap: 0.55rem;
+  gap: 0.35rem;
   margin-bottom: 0.6rem;
-  padding: 0.7rem 0.85rem;
+  padding: 0.45rem 0.7rem;
   background:
     linear-gradient(180deg, rgb(94 67 46 / 0.96), rgb(58 41 30 / 0.96));
   border: 1px solid rgb(0 0 0 / 0.4);
@@ -370,6 +370,7 @@ select {
 }
 
 .game-hud__main {
+  gap: 0.45rem 0.6rem;
   justify-content: space-between;
 }
 
@@ -395,36 +396,35 @@ select {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 2px 4px rgb(0 0 0 / 0.35);
   color: #3a2207;
   display: inline-flex;
+  flex: 0 0 auto;
   flex-direction: column;
   font-weight: 800;
-  height: 2.7rem;
+  height: 2.15rem;
   justify-content: center;
   line-height: 1;
   text-align: center;
-  width: 2.7rem;
+  width: 2.15rem;
 }
 
 .round-badge small {
-  font-size: 0.5rem;
-  letter-spacing: 0.1em;
+  font-size: 0.44rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .round-badge strong {
   font-family: var(--font-display);
-  font-size: 1.15rem;
-}
-
-.hen-turn {
-  align-items: center;
-  display: inline-flex;
-  gap: 0.45rem;
+  font-size: 0.95rem;
 }
 
 .action-prompt {
+  align-items: center;
+  display: flex;
+  flex: 1 1 12rem;
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 600;
+  gap: 0.4rem;
   margin: 0;
 }
 
@@ -453,6 +453,7 @@ select {
 }
 
 .score-strip {
+  flex: 0 0 auto;
   gap: 0.4rem;
 }
 
@@ -474,18 +475,32 @@ select {
   color: #1c424b;
 }
 
-.game-hud__meta {
-  color: var(--cream-dim);
-  font-size: 0.82rem;
-  gap: 0.75rem;
-}
-
 .game-hud__player {
   align-items: center;
   border-top: 1px solid rgb(0 0 0 / 0.25);
   display: flex;
-  gap: 0.6rem;
-  padding-top: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  padding-top: 0.3rem;
+}
+
+.game-hud__player-name {
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-hud__player-meta {
+  font-size: 0.74rem;
+  margin: 0;
+}
+
+.game-hud__player .avatar-dropdown {
+  flex: 0 0 auto;
+  margin-top: 0;
 }
 
 .game-hud__player p {
@@ -495,6 +510,7 @@ select {
 /* ---------- Table surface (the cloth) ---------- */
 
 .game-table-shell {
+  --hand-tray-reserve: 1rem;
   display: grid;
   gap: 0.6rem;
   scroll-margin-top: 5rem;
@@ -707,8 +723,14 @@ select {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
-  padding: 0.15rem 0.1rem 0.4rem;
+  padding: 0.15rem 0.1rem calc(0.4rem + var(--hand-tray-reserve, 0px));
+  scroll-snap-type: x proximity;
   scrollbar-width: thin;
+  background:
+    linear-gradient(90deg, var(--toast) 30%, transparent 100%) left / 2rem 100% no-repeat local,
+    linear-gradient(270deg, var(--toast) 30%, transparent 100%) right / 2rem 100% no-repeat local,
+    linear-gradient(90deg, rgb(0 0 0 / 0.35), transparent 100%) left / 1.1rem 100% no-repeat scroll,
+    linear-gradient(270deg, rgb(0 0 0 / 0.35), transparent 100%) right / 1.1rem 100% no-repeat scroll;
 }
 
 .place-card {
@@ -719,9 +741,10 @@ select {
   display: grid;
   flex: 0 0 auto;
   gap: 0.3rem;
-  min-width: 7.5rem;
+  min-width: 6.75rem;
   padding: 0.5rem 0.6rem;
   position: relative;
+  scroll-snap-align: start;
 }
 
 .place-card.current {
@@ -1205,6 +1228,7 @@ button.playing-card {
 
 @media (min-width: 980px) {
   .game-table-shell {
+    --hand-tray-reserve: 0px;
     grid-template-columns: minmax(0, 1fr) 22rem;
     align-items: start;
   }
@@ -1214,10 +1238,12 @@ button.playing-card {
   }
 
   .player-strip {
+    background: none;
     flex-direction: column;
     grid-column: 2;
     grid-row: 1;
     overflow-x: visible;
+    scroll-snap-type: none;
   }
 
   .place-card {

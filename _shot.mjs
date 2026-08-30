@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 
 const url = process.argv[2] || "http://localhost:5173/?preview=game";
-const out = process.argv[3] || "C:/Users/texas/.copilot/session-state/99e94b50-7f12-4d3c-a51b-f87d3c745d6b/files/shot.png";
+const out = process.argv[3] || "shot.png";
 const width = Number(process.argv[4] || 402);
 const height = Number(process.argv[5] || 860);
 const fullPage = process.argv[6] === "full";

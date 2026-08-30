@@ -1,5 +1,16 @@
 # Todo items
 
+## In progress
+
+1. [~] Game page redesign — mobile-first game feel. **Shipped so far:** split `GameTable` into
+   `GameHud` / `TableSurface` / `PlayerStrip` / `HandTray`, drag-to-reorder your hand (dnd-kit),
+   multi-card selection for melds, subtle book/meld hints (possible-meld, existing-meld,
+   wild-helper), compact HUD with round + turn prompt on one line, both teams' melds visible,
+   and a horizontally scrollable player strip showing hand/foot counts.
+   **Still open:** double-tap-to-discard is discoverable only via the helper text; the
+   "Add to meld" buttons only appear once a valid selection exists, so there is no affordance
+   hinting they exist; no animation/motion when cards are drawn, melded, or discarded.
+
 ## Maybe completed
 
 1. [] This doesn't seem like an actual game. It feels more like a simulation of a game placed onto a simple UI. Let's spruce this up by reordering the game page so that it feels more like a game especially thinking about playing this on their phone i.e. vertical orientation smaller screens. Use your best understanding of what browser based games look like to help here. Your cards should feel like yours - you should be able should be able to drag around their cards for ordering. Users should also be able to select multiple cards after draw for purposes of creating books. At the top should be information about the game - which round, whose turn, if it's yours, what action do you need to, I should be able to view the other team's books and how many cards in their hands. We should highlight subtly which cards can form a book or can be a part of an existing book. Etc.
