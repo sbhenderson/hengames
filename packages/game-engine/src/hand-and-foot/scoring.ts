@@ -1,5 +1,5 @@
 import type { Card, Rank } from "@hengames/shared";
-import { isWildRank } from "./cards.js";
+import { isRedThree, isWildRank } from "./cards.js";
 import type { HandAndFootRules, HandAndFootState, Meld } from "./types.js";
 
 export function cardPoints(card: Pick<Card, "rank">, rules: HandAndFootRules): number {
@@ -21,9 +21,17 @@ export function classifyMeld(input: {
   rules: HandAndFootRules;
 }): Meld {
   const { cards, id, rules, teamId } = input;
+  if (cards.some((card) => card.rank === "3")) {
+    throw new Error("3s can never be melded.");
+  }
+
   const rank = determineMeldRank(cards);
   const naturalCount = cards.filter((card) => card.rank === rank).length;
   const wildCount = cards.filter((card) => isWildRank(card.rank)).length;
+
+  if (cards.some((card) => card.rank !== rank && !isWildRank(card.rank))) {
+    throw new Error("A meld can only contain one rank plus wild cards.");
+  }
 
   if (cards.length < 3) {
     throw new Error("A meld requires at least three cards.");
@@ -58,9 +66,14 @@ export function scoreRound(state: HandAndFootState, rules: HandAndFootRules): Re
     score[meld.teamId] += bookBonus + cardTotal;
   }
 
+  for (const teamId of ["red", "blue"] as const) {
+    score[teamId] += state.redThrees[teamId].length * 100;
+  }
+
   for (const player of Object.values(state.players)) {
-    const penaltyCards = [...player.hand, ...player.foot];
+    const penaltyCards = [...player.hand, ...player.foot.filter((card) => !isRedThree(card))];
     score[player.teamId] -= penaltyCards.reduce((total, card) => total + cardPoints(card, rules), 0);
+    score[player.teamId] -= player.foot.filter(isRedThree).length * 500;
   }
 
   return score;

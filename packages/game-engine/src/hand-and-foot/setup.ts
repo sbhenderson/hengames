@@ -1,5 +1,6 @@
 import { GameRuleError } from "@hengames/shared";
 import { createDecks, shuffle } from "./cards.js";
+import { settleRedThrees } from "./redThrees.js";
 import type { HandAndFootRules, HandAndFootState } from "./types.js";
 
 export const defaultHandAndFootRules: HandAndFootRules = {
@@ -63,7 +64,7 @@ export function createInitialHandAndFootState(input: {
     throw new GameRuleError("invalid-rules", "Not enough cards to start the discard pile.");
   }
 
-  return {
+  const state: HandAndFootState = {
     phase: "playing",
     round: 1,
     playerOrder: [...playerIds],
@@ -73,9 +74,16 @@ export function createInitialHandAndFootState(input: {
     drawPile: deck,
     discardPile: [firstDiscard],
     melds: [],
+    redThrees: { red: [], blue: [] },
     teamScores: { red: 0, blue: 0 },
     roundScores: [],
     lastEvent: "Game started.",
     lastEventSeq: 0
   };
+
+  for (const player of Object.values(state.players)) {
+    settleRedThrees(state, player);
+  }
+
+  return state;
 }

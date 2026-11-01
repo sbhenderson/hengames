@@ -4,6 +4,8 @@ import { formatCard, formatCardRank, isRedSuit, meldSeal, suitChar } from "./car
 import type { MeldView } from "./types";
 import {
   analyzeSelectedCards,
+  canPickUp,
+  canPickUpTopDiscard,
   getCardHints,
   reconcileCardOrder,
   turnActionPrompt
@@ -173,5 +175,67 @@ describe("game table interaction helpers", () => {
     expect(hints["8a"]).toBe("possible-meld");
     expect(hints["ka"]).toBe("existing-meld");
     expect(hints["wild"]).toBe("wild-helper");
+  });
+});
+
+describe("pickup helpers", () => {
+  const nines = [card("9a", "9", "clubs"), card("9b", "9", "spades")];
+
+  test("enables pickup for two naturals matching the top discard", () => {
+    const view = { turnStep: "must-draw" as const, topDiscard: card("top", "9", "hearts") };
+    expect(canPickUp(view, nines)).toBe(true);
+    expect(canPickUp(view, [...nines, card("w", "2", "clubs")])).toBe(true);
+  });
+
+  test("disables pickup for one natural, other ranks, or the wrong step", () => {
+    const view = { turnStep: "must-draw" as const, topDiscard: card("top", "9", "hearts") };
+    expect(canPickUp(view, [nines[0]!, card("w", "2", "clubs")])).toBe(false);
+    expect(canPickUp(view, [...nines, card("k", "K", "clubs")])).toBe(false);
+    expect(canPickUp({ ...view, turnStep: "must-discard" }, nines)).toBe(false);
+  });
+
+  test("disables pickup on a black 3, wild, or empty pile", () => {
+    const threes = [card("t1", "3", "clubs"), card("t2", "3", "spades")];
+    expect(canPickUp({ turnStep: "must-draw", topDiscard: card("b3", "3", "spades") }, threes)).toBe(false);
+    expect(canPickUp({ turnStep: "must-draw", topDiscard: card("two", "2", "clubs") }, [card("a", "2"), card("b", "2")])).toBe(false);
+    expect(canPickUp({ turnStep: "must-draw", topDiscard: null }, nines)).toBe(false);
+    expect(canPickUpTopDiscard(card("jk", "JOKER"))).toBe(false);
+    expect(canPickUpTopDiscard(card("q", "Q", "clubs"))).toBe(true);
+  });
+
+  test("prompts for pickup when the pile can be picked up", () => {
+    const base = { isOwnTurn: true, currentPlayerName: "peeking-penguin", turnStep: "must-draw" as const };
+    expect(turnActionPrompt({ ...base, canPickUpPile: true })).toBe("Your turn: draw 2 or pick up the pile");
+    expect(turnActionPrompt({ ...base, canPickUpPile: false })).toBe("Your turn: draw 2");
+  });
+
+  test("disables meld actions while the selection contains a 3", () => {
+    const hand = [card("3a", "3", "spades"), card("3b", "3", "clubs"), card("3c", "3", "spades"), card("ka", "K", "clubs")];
+    const melds = [
+      {
+        id: "meld-k",
+        rank: "K" as const,
+        teamId: "red" as const,
+        cards: [card("kb", "K"), card("kc", "K"), card("kd", "K")],
+        isBook: false,
+        isClean: true
+      }
+    ];
+    const withThrees = analyzeSelectedCards({
+      cards: hand,
+      selectedCardIds: ["3a", "3b", "3c"],
+      melds,
+      teamId: "red",
+      turnStep: "must-discard"
+    });
+    expect(withThrees.canCreateMeld).toBe(false);
+    const mixed = analyzeSelectedCards({
+      cards: hand,
+      selectedCardIds: ["3a", "ka"],
+      melds,
+      teamId: "red",
+      turnStep: "must-discard"
+    });
+    expect(mixed.addToMeldOptions).toEqual([]);
   });
 });

@@ -7,7 +7,7 @@ import { HandTray } from "./game-table/HandTray";
 import { PlayerStrip, type PlayerStripParticipant } from "./game-table/PlayerStrip";
 import { TableSurface } from "./game-table/TableSurface";
 import type { GameNotification } from "./game-table/NotificationsMenu";
-import { turnActionPrompt } from "./game-table/gameTableHelpers";
+import { canPickUpTopDiscard, turnActionPrompt } from "./game-table/gameTableHelpers";
 import type { HandAndFootTableView } from "./game-table/types";
 
 export function GameTable(props: {
@@ -106,7 +106,12 @@ export function GameTable(props: {
   return (
     <main className="page game-page">
       <GameHud
-        actionPrompt={turnActionPrompt({ isOwnTurn, currentPlayerName, turnStep: view.turnStep })}
+        actionPrompt={turnActionPrompt({
+          isOwnTurn,
+          currentPlayerName,
+          turnStep: view.turnStep,
+          canPickUpPile: canPickUpTopDiscard(view.topDiscard)
+        })}
         activePile={ownPlayer?.activePile}
         avatarDisabled={updateAvatar.isPending}
         avatarError={avatarError}
@@ -128,6 +133,7 @@ export function GameTable(props: {
           drawCount={view.drawCount}
           lastEvent={view.lastEvent}
           melds={view.melds}
+          redThrees={view.redThrees}
           topDiscard={view.topDiscard}
         />
         <PlayerStrip currentPlayerId={view.currentPlayerId} participants={participants} players={view.players} selfId={currentParticipantId} />
@@ -142,7 +148,9 @@ export function GameTable(props: {
           onCreateMeld={(cardIds) => runAction({ type: "meld", cardIds })}
           onDiscard={(cardId) => runAction({ type: "discard", cardId })}
           onDraw={() => runAction({ type: "draw" })}
+          onPickUp={(cardIds) => runAction({ type: "pickup", cardIds })}
           teamId={ownPlayer?.teamId}
+          topDiscard={view.topDiscard}
           turnStep={view.turnStep}
         />
       </section>

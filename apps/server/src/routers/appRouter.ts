@@ -27,6 +27,10 @@ const soloActionSchema = z.discriminatedUnion("type", [
 const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("draw") }),
   z.object({
+    type: z.literal("pickup"),
+    cardIds: z.array(z.string()).min(2)
+  }),
+  z.object({
     type: z.literal("meld"),
     cardIds: z.array(z.string()).min(1),
     targetMeldId: z.string().optional()

@@ -26,3 +26,4 @@ export * from "./types.js";
 export * from "./cards.js";
 export * from "./setup.js";
 export * from "./views.js";
+export * from "./redThrees.js";

@@ -410,6 +410,64 @@ describe("appRouter", () => {
       expect(snapshot.status).toBe("playing");
       expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(host.room.code, roomStore);
     });
+
+    test("pickup reaches the engine, updates the snapshot and broadcasts", async () => {
+      const caller = router.createCaller({});
+      const host = await caller.createRoom({ displayName: "Alice" });
+      const others = [] as Awaited<ReturnType<typeof caller.joinRoom>>[];
+      for (const name of ["Bob", "Carol", "Dave"]) {
+        others.push(await caller.joinRoom({ code: host.room.code, displayName: name }));
+      }
+      const members = [host, ...others];
+      const seats = ["north", "east", "south", "west"] as const;
+      for (const [index, member] of members.entries()) {
+        await caller.chooseSeat({ code: host.room.code, seatId: seats[index]!, participantToken: member.participant.token });
+        await caller.setReady({ code: host.room.code, ready: true, participantToken: member.participant.token });
+      }
+      await caller.startGame({ code: host.room.code, participantToken: host.participant.token });
+
+      const state = roomStore._getInternalGameState(host.room.code)!;
+      const me = state.players[host.participant.id]!;
+      me.hand = [
+        { id: "k1", rank: "K", suit: "clubs", deckIndex: 0 },
+        { id: "k2", rank: "K", suit: "hearts", deckIndex: 0 },
+        { id: "q1", rank: "Q", suit: "clubs", deckIndex: 0 }
+      ];
+      state.drawPile = Array.from({ length: 20 }, (_, i) => ({ id: `dp${i}`, rank: "9", suit: "clubs", deckIndex: 0 }));
+      state.discardPile = [
+        ...Array.from({ length: 8 }, (_, i) => ({ id: `pile${i}`, rank: "7", suit: "clubs", deckIndex: 0 })),
+        { id: "k3", rank: "K", suit: "spades", deckIndex: 0 },
+        { id: "k4", rank: "K", suit: "diamonds", deckIndex: 0 }
+      ] as typeof state.discardPile;
+      state.melds = [
+        {
+          id: "existing",
+          teamId: me.teamId,
+          rank: "A",
+          cards: Array.from({ length: 3 }, (_, i) => ({ id: `a${i}`, rank: "A", suit: "clubs", deckIndex: 0 })),
+          isBook: false,
+          isClean: false
+        }
+      ] as typeof state.melds;
+      mockWsHub.broadcastRoom.mockClear();
+
+      await expect(
+        caller.gameAction({ code: host.room.code, action: { type: "pickup", cardIds: ["k1"] }, participantToken: host.participant.token })
+      ).rejects.toThrow();
+
+      const snapshot = await caller.gameAction({
+        code: host.room.code,
+        action: { type: "pickup", cardIds: ["k1", "k2"] },
+        participantToken: host.participant.token
+      });
+
+      const view = snapshot.currentView as unknown as { turnStep: string; discardCount: number; melds: Array<{ rank: string; cards: unknown[] }> };
+      expect(view.turnStep).toBe("must-discard");
+      expect(view.discardCount).toBe(3);
+      const kMeld = view.melds.find((meld) => meld.rank === "K");
+      expect(kMeld?.cards).toHaveLength(3);
+      expect(mockWsHub.broadcastRoom).toHaveBeenCalledWith(host.room.code, roomStore);
+    });
   });
 
   describe("seatId validation", () => {

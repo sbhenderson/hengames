@@ -14,10 +14,11 @@ export function turnActionPrompt(input: {
   isOwnTurn: boolean;
   currentPlayerName: string;
   turnStep: HandAndFootTableView["turnStep"];
+  canPickUpPile?: boolean;
 }): string {
   if (input.isOwnTurn) {
     if (input.turnStep === "must-draw") {
-      return "Your turn: draw 2";
+      return input.canPickUpPile ? "Your turn: draw 2 or pick up the pile" : "Your turn: draw 2";
     }
     if (input.turnStep === "must-discard") {
       return "Your turn: meld if you can, then discard 1";
@@ -34,6 +35,24 @@ export function turnActionPrompt(input: {
   return `Waiting for ${input.currentPlayerName} to meld`;
 }
 
+export function canPickUpTopDiscard(topDiscard: Card | null): boolean {
+  return topDiscard !== null && topDiscard.rank !== "3" && !isWild(topDiscard);
+}
+
+export function canPickUp(
+  view: Pick<HandAndFootTableView, "turnStep" | "topDiscard">,
+  selection: Card[]
+): boolean {
+  const top = view.topDiscard;
+  if (view.turnStep !== "must-draw" || !top || !canPickUpTopDiscard(top)) {
+    return false;
+  }
+  if (selection.some((card) => card.rank !== top.rank && !isWild(card))) {
+    return false;
+  }
+  return selection.filter((card) => card.rank === top.rank).length >= 2;
+}
+
 export function analyzeSelectedCards(input: {
   cards: Card[];
   selectedCardIds: string[];
@@ -43,12 +62,13 @@ export function analyzeSelectedCards(input: {
 }): SelectionAnalysis {
   const selectedIdSet = new Set(input.selectedCardIds);
   const selectedCards = input.cards.filter((card) => selectedIdSet.has(card.id));
+  const hasThree = selectedCards.some((card) => card.rank === "3");
   const ownMelds = input.teamId ? input.melds.filter((meld) => meld.teamId === input.teamId) : [];
 
   return {
     selectedCards,
-    canCreateMeld: canFormMeld(selectedCards),
-    addToMeldOptions: addToMeldOptions(selectedCards, ownMelds),
+    canCreateMeld: !hasThree && canFormMeld(selectedCards),
+    addToMeldOptions: hasThree ? [] : addToMeldOptions(selectedCards, ownMelds),
     canDiscard: input.turnStep === "must-discard" && selectedCards.length === 1
   };
 }

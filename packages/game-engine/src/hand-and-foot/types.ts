@@ -43,6 +43,7 @@ export type HandAndFootState = {
   drawPile: Card[];
   discardPile: Card[];
   melds: Meld[];
+  redThrees: Record<"red" | "blue", Card[]>;
   teamScores: Record<"red" | "blue", number>;
   roundScores: Array<Record<"red" | "blue", number>>;
   lastEvent: string;
@@ -51,6 +52,7 @@ export type HandAndFootState = {
 
 export type HandAndFootAction =
   | { type: "draw" }
+  | { type: "pickup"; cardIds: CardId[] }
   | { type: "meld"; cardIds: CardId[]; targetMeldId?: string }
   | { type: "discard"; cardId: CardId };
 
@@ -74,6 +76,7 @@ export type HandAndFootPlayerView = {
   discardCount: number;
   drawCount: number;
   melds: Meld[];
+  redThrees: Record<"red" | "blue", Card[]>;
   teamScores: Record<"red" | "blue", number>;
   roundScores: Array<Record<"red" | "blue", number>>;
   lastEvent: string;

@@ -16,7 +16,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Card } from "@hengames/shared";
 import { formatCard } from "./cardDisplay";
-import { analyzeSelectedCards, getCardHints, reconcileCardOrder } from "./gameTableHelpers";
+import { analyzeSelectedCards, canPickUp, getCardHints, reconcileCardOrder } from "./gameTableHelpers";
 import { PlayingCard } from "./PlayingCard";
 import type { CardHint, HandAndFootTableView, MeldView, TeamId } from "./types";
 
@@ -25,11 +25,13 @@ export function HandTray(props: {
   activePile: "hand" | "foot" | undefined;
   teamId: TeamId | undefined;
   turnStep: HandAndFootTableView["turnStep"];
+  topDiscard: Card | null;
   isOwnTurn: boolean;
   melds: MeldView[];
   actionError: string | null;
   actionPending: boolean;
   onDraw(): void;
+  onPickUp(cardIds: string[]): void;
   onDiscard(cardId: string): void;
   onCreateMeld(cardIds: string[]): void;
   onAddToMeld(cardIds: string[], targetMeldId: string): void;
@@ -120,6 +122,10 @@ export function HandTray(props: {
     );
   }
 
+  const pickUpDisabled =
+    !props.isOwnTurn ||
+    props.actionPending ||
+    !canPickUp({ turnStep: props.turnStep, topDiscard: props.topDiscard }, analysis.selectedCards);
   const drawDisabled = !props.isOwnTurn || props.turnStep !== "must-draw" || props.actionPending;
 
   return (
@@ -138,6 +144,9 @@ export function HandTray(props: {
 
       <div className="hand-action-bar" aria-label="Selected card actions">
         <span className="hand-action-bar__count">{selectedIds.length} selected</span>
+        <button disabled={pickUpDisabled} onClick={() => props.onPickUp(selectedIds)} type="button">
+          Pick up pile
+        </button>
         <button disabled={!props.isOwnTurn || !analysis.canCreateMeld || props.actionPending} onClick={() => props.onCreateMeld(selectedIds)} type="button">
           Create meld
         </button>

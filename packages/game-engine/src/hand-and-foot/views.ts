@@ -34,6 +34,7 @@ export function getHandAndFootPlayerView(input: {
     discardCount: state.discardPile.length,
     drawCount: state.drawPile.length,
     melds: JSON.parse(JSON.stringify(state.melds)),
+    redThrees: JSON.parse(JSON.stringify(state.redThrees)),
     teamScores: { ...state.teamScores },
     roundScores: state.roundScores.map(score => ({ ...score })),
     lastEvent: state.lastEvent,

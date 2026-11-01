@@ -80,7 +80,9 @@ describe("roomStore", () => {
     const snapshot = store.startGame({ code: room.code, token: p1.token });
     const view = snapshot.currentView as HandAndFootPlayerView;
 
-    expect(view.drawCount).toBe(7 * 54 - 4 * 22 - 1);
+    // Every red 3 laid at the deal is replaced from the draw pile.
+    const laidRedThrees = view.redThrees.red.length + view.redThrees.blue.length;
+    expect(view.drawCount + laidRedThrees).toBe(7 * 54 - 4 * 22 - 1);
   });
 
   test("startGame assigns a fresh gameInstanceId absent during the lobby", () => {

@@ -8,6 +8,7 @@ export function TableSurface(props: {
   discardCount: number;
   drawCount: number;
   melds: MeldView[];
+  redThrees: Record<TeamId, Card[]>;
   lastEvent: string;
 }) {
   return (
@@ -37,7 +38,12 @@ export function TableSurface(props: {
 
       <div className="team-melds-grid">
         {(["red", "blue"] as const).map((teamId) => (
-          <TeamMelds key={teamId} teamId={teamId} melds={props.melds.filter((meld) => meld.teamId === teamId)} />
+          <TeamMelds
+            key={teamId}
+            teamId={teamId}
+            melds={props.melds.filter((meld) => meld.teamId === teamId)}
+            redThrees={props.redThrees[teamId]}
+          />
         ))}
       </div>
     </section>
@@ -46,7 +52,7 @@ export function TableSurface(props: {
 
 const MAX_FANNED = 7;
 
-function TeamMelds(props: { teamId: TeamId; melds: MeldView[] }) {
+function TeamMelds(props: { teamId: TeamId; melds: MeldView[]; redThrees: Card[] }) {
   const teamName = props.teamId === "red" ? "Red" : "Blue";
   return (
     <section className={`team-meld-zone ${props.teamId}-team`} aria-label={`Team ${props.teamId} books and melds`}>
@@ -54,6 +60,16 @@ function TeamMelds(props: { teamId: TeamId; melds: MeldView[] }) {
         <span>{teamName} team</span>
         <span className={`team-badge team-${props.teamId}`}>{props.melds.length} melds</span>
       </h3>
+      {props.redThrees.length ? (
+        <div className="red-threes" aria-label={`Team ${props.teamId} red 3s`}>
+          <div className="meld-fan">
+            {props.redThrees.map((card) => (
+              <PlayingCard card={card} key={card.id} size="sm" />
+            ))}
+          </div>
+          <span className="pile__count">Red 3s: {props.redThrees.length}</span>
+        </div>
+      ) : null}
       {props.melds.length ? (
         <div className="meld-list">
           {props.melds.map((meld) => {

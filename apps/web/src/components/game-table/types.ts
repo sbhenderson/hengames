@@ -12,6 +12,7 @@ export type HandAndFootTableView = {
   discardCount: number;
   drawCount: number;
   melds: MeldView[];
+  redThrees: Record<TeamId, Card[]>;
   teamScores: Record<TeamId, number>;
   roundScores: Array<Record<TeamId, number>>;
   lastEvent: string;

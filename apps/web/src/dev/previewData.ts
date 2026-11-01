@@ -19,7 +19,7 @@ const hand: Card[] = [
   card("4", "hearts"),
   card("Q", "spades"),
   card("10", "diamonds"),
-  card("3", "hearts")
+  card("3", "spades")
 ];
 
 export function previewRoomSnapshot(): RoomSnapshot {
@@ -80,6 +80,10 @@ export function previewRoomSnapshot(): RoomSnapshot {
           isClean: false
         }
       ],
+      redThrees: {
+        red: [card("3", "hearts")],
+        blue: [card("3", "diamonds"), card("3", "hearts")]
+      },
       teamScores: { red: 1340, blue: 980 },
       roundScores: [{ red: 540, blue: 410 }],
       lastEvent: "lively-lion melded three 6s",
